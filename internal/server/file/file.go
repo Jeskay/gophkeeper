@@ -37,3 +37,19 @@ func (s *fileService) ReadFile(name string) ([]byte, error) {
 	_, err = s.fileReader.FileRead(file, data)
 	return data, err
 }
+
+func (s *fileService) ReadByChunk(name string, f func([]byte) error) error {
+	file, err := s.fileReader.OpenFile(path.Join(s.prefix, name))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	scanner := s.fileReader.NewBufferedScanner(file)
+	for scanner.Scan() {
+		if err := f(scanner.Bytes()); err != nil {
+			return err
+		}
+	}
+	return nil
+}

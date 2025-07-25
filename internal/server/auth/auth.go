@@ -11,12 +11,12 @@ import (
 )
 
 type authService struct {
-	dbService db.DatabaseService
+	dbService db.Service
 	secretKey []byte
 	expiresAt time.Duration
 }
 
-func NewService(dbService db.DatabaseService, secretKey []byte, expiration time.Duration) *authService {
+func NewService(dbService db.Service, secretKey []byte, expiration time.Duration) *authService {
 	return &authService{
 		secretKey: secretKey,
 		expiresAt: expiration,
@@ -32,7 +32,7 @@ func (s *authService) Login(ctx context.Context, name, password string) (int64, 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return http.StatusUnauthorized, ""
 	}
-	token, err := s.CreateToken(user.Name)
+	token, err := s.CreateToken(user.Name, user.Id)
 	if err != nil {
 		return http.StatusUnauthorized, ""
 	}

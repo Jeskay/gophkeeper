@@ -1,15 +1,17 @@
 package main
 
 import (
-	"context"
 	"database/sql"
+	"log"
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
-	grpckit "github.com/go-kit/kit/transport/grpc"
+	"github.com/caarlos0/env/v11"
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"go.uber.org/zap/exp/zapslog"
 	"google.golang.org/grpc"
@@ -19,8 +21,9 @@ import (
 	"gophkeeper/config"
 	"gophkeeper/internal/server/auth"
 	"gophkeeper/internal/server/db"
-	"gophkeeper/internal/server/endpoints"
+	"gophkeeper/internal/server/file"
 	"gophkeeper/internal/server/transport"
+	"gophkeeper/internal/server/transport/interceptors"
 )
 
 var (
@@ -48,32 +51,40 @@ func main() {
 	{
 		authService = auth.NewService(dbService, []byte(cfg.SecretKey), time.Second*5)
 	}
-	eps := endpoints.NewEndpointList(authService)
-	grpcServer := transport.NewGRPCServer(eps)
+	fileService := file.NewService("storage")
+	grpcServer := transport.NewGRPCServer(authService, fileService)
 
 	grpcListener, err := net.Listen("tcp", grpcAddr)
 	if err != nil {
 		zapL.Fatal("failed to start grpc server", zap.Error(err))
 	}
+	baseServer := grpc.NewServer(grpc.UnaryInterceptor(interceptors.NewAuthUnaryInterceptor(authService)))
+	reflection.Register(baseServer)
+	proto.RegisterGophkeeperServer(baseServer, grpcServer)
+
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		baseServer := grpc.NewServer(grpc.UnaryInterceptor(grpckit.Interceptor))
-		reflection.Register(baseServer)
-		proto.RegisterGophkeeperServer(baseServer, grpcServer)
-		if err := baseServer.Serve(grpcListener); err != nil {
-			grpcListener.Close()
-			zapL.Fatal("internal server error", zap.Error(err))
-		}
-	}()
-	<-c
-	zapL.Info("server shutting down...")
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	if err := grpcListener.Close(); err != nil {
-		zapL.Error("failed to close grpc connection", zap.Error(err))
-	}
 
-	<-ctx.Done()
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		<-c
+		zapL.Info("server shutting down...")
+		baseServer.GracefulStop()
+		wg.Done()
+	}()
+	if err := baseServer.Serve(grpcListener); err != nil {
+		zapL.Fatal("internal server error", zap.Error(err))
+	}
+	wg.Wait()
 	zapL.Info("server exited")
+}
+
+func init() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("no configuration file was found")
+	}
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatal(err)
+	}
 }
