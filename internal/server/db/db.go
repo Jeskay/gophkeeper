@@ -55,7 +55,7 @@ func (s *databaseService) GetUser(ctx context.Context, name string) (dto.User, e
 	if err := row.Scan(&userId, &userLogin, &userPassword); err != nil {
 		return dto.User{}, err
 	}
-	return dto.User{Name: userLogin, Password: userPassword}, nil
+	return dto.User{Id: userId, Name: userLogin, Password: userPassword}, nil
 }
 
 func (s *databaseService) CreateUser(ctx context.Context, user dto.User) error {
@@ -140,6 +140,7 @@ func (s *databaseService) GetUserFiles(ctx context.Context, userId int64) ([]dto
 }
 
 func (s *databaseService) CreateFile(ctx context.Context, file dto.File, userId int64) (int64, error) {
+	var fileId int64
 	query := s.pSQL.Insert(
 		"files",
 	).Columns(
@@ -150,17 +151,12 @@ func (s *databaseService) CreateFile(ctx context.Context, file dto.File, userId 
 		file.Name,
 		file.Status,
 		userId,
-	).Suffix("ON CONFLICT (owner_id) DO NOTHING")
-	res, err := query.ExecContext(ctx)
-	if err != nil {
+	).Suffix("RETURNING id")
+	row := query.QueryRowContext(ctx)
+	if err := row.Scan(&fileId); err != nil {
 		return 0, err
 	}
-	if affected, err := res.RowsAffected(); err != nil {
-		return 0, err
-	} else if affected == 0 {
-		return 0, errors.New("file already exists")
-	}
-	return res.LastInsertId()
+	return fileId, nil
 }
 
 func (s *databaseService) init() error {

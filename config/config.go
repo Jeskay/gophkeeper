@@ -7,6 +7,10 @@ type ServerConfig struct {
 	DbConnection Connection
 	SecretKey    string `env:"SECRET_KEY"`
 }
+
+type ClientConfig struct {
+	GRPCAddress Address
+}
 type Address struct {
 	Host string `env:"GRPC_HOST"`
 	Port string `env:"GRPC_PORT"`

@@ -1,14 +1,22 @@
-package list
+package presentation
 
 import (
-	"gophkeeper/internal/client/list/ui"
+	"gophkeeper/internal/client/download/control"
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func CreateList() tea.Model {
-	return ui.NewList([]table.Column{
+type downloadPresenter struct {
+	controller control.Controller
+}
+
+func NewPresenter(controller control.Controller) *downloadPresenter {
+	return &downloadPresenter{controller: controller}
+}
+
+func (p *downloadPresenter) CreateTable() tea.Model {
+	return NewList([]table.Column{
 		{Title: "Id", Width: 4},
 		{Title: "Title", Width: 10},
 		{Title: "Path", Width: 20},

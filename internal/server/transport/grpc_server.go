@@ -18,10 +18,11 @@ type KeeperServer struct {
 	proto.UnimplementedGophkeeperServer
 }
 
-func NewGRPCServer(authService auth.Service, fileService file.Service) proto.GophkeeperServer {
+func NewGRPCServer(authService auth.Service, fileService file.Service, dbService db.Service) proto.GophkeeperServer {
 	return &KeeperServer{
 		authService: authService,
 		fileService: fileService,
+		dbService:   dbService,
 	}
 }
 
@@ -50,6 +51,9 @@ func (k *KeeperServer) GetFiles(ctx context.Context, r *proto.GetRequest) (*prot
 }
 
 func (k *KeeperServer) SaveFile(stream proto.Gophkeeper_SaveFileServer) error {
+	v := stream.Context().Value(dto.Id)
+	userId := v.(int64)
+
 	req, err := stream.Recv()
 	if err != nil {
 		return err
@@ -57,9 +61,7 @@ func (k *KeeperServer) SaveFile(stream proto.Gophkeeper_SaveFileServer) error {
 	fName := req.GetInfo().GetName()
 	fType := req.GetInfo().GetFileType()
 
-	userId := stream.Context().Value("userId").(int64)
-
-	fId, err := k.dbService.CreateFile(stream.Context(), dto.File{Name: fName, Status: dto.Processing}, userId)
+	fId, err := k.dbService.CreateFile(context.Background(), dto.File{Name: fName, Status: dto.Processing}, userId)
 	if err != nil {
 		return err
 	}
@@ -82,6 +84,10 @@ func (k *KeeperServer) SaveFile(stream proto.Gophkeeper_SaveFileServer) error {
 			return err
 		}
 	}
+	err = stream.SendAndClose(&proto.SaveResponse{Size: uint32(size)})
+	if err != nil {
+		return err
+	}
 	if err := k.fileService.SaveFile(fName+fType, data.Bytes()); err != nil {
 		return err
 	}
@@ -89,7 +95,6 @@ func (k *KeeperServer) SaveFile(stream proto.Gophkeeper_SaveFileServer) error {
 	if err != nil {
 		return err
 	}
-	stream.SendAndClose(&proto.SaveResponse{Size: uint32(size)})
 	return nil
 }
 

@@ -1,9 +1,10 @@
-package ui
+package presentation
 
 import (
 	"fmt"
 	"gophkeeper/internal/client/tui"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -23,7 +24,7 @@ var (
 	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
 )
 
-func NewPanel(onComplete func(login, password string)) Panel {
+func NewPanel(onComplete func(login, password string) error) Panel {
 	m := Panel{
 		inputs:     make([]textinput.Model, 2),
 		onComplete: onComplete,
@@ -54,12 +55,21 @@ func NewPanel(onComplete func(login, password string)) Panel {
 	return m
 }
 
+type clearErrorMsg struct{}
+
+func clearErrorAfter(t time.Duration) tea.Cmd {
+	return tea.Tick(t, func(_ time.Time) tea.Msg {
+		return clearErrorMsg{}
+	})
+}
+
 type Panel struct {
 	focusIndex  int
 	inputs      []textinput.Model
 	cursorMode  cursor.Mode
-	onComplete  func(string, string)
+	onComplete  func(string, string) error
 	parentModel tea.Model
+	err         error
 }
 
 func (p Panel) Init() tea.Cmd { return textinput.Blink }
@@ -88,14 +98,15 @@ func (p Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "tab", "shift+tab", "enter", "up", "down":
 			s := msg.String()
 
-			// Did the user press enter while the submit button was focused?
-			// If so, exit.
 			if s == "enter" && p.focusIndex == len(p.inputs) {
-				p.onComplete(p.inputs[0].Value(), p.inputs[1].Value())
-				return p, tea.ClearScreen
+				err := p.onComplete(p.inputs[0].Value(), p.inputs[1].Value())
+				if err != nil {
+					p.err = err
+					return p, tea.ClearScreen
+				}
+				return p.parentModel.Update(tui.AuthMsg{})
 			}
 
-			// Cycle indexes
 			if s == "up" || s == "shift+tab" {
 				p.focusIndex--
 			} else {
@@ -128,6 +139,8 @@ func (p Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tui.SpawnMsg:
 		p.parentModel = msg.Parent
 		return p, tea.ClearScreen
+	case clearErrorMsg:
+		p.err = nil
 	}
 
 	// Handle character input and blinking
@@ -151,6 +164,10 @@ func (p Panel) View() string {
 		button = &focusedButton
 	}
 	fmt.Fprintf(&b, "\n\n%s\n\n", *button)
+
+	if p.err != nil {
+		b.WriteString(helpStyle.Render(p.err.Error()))
+	}
 
 	b.WriteString(helpStyle.Render("cursor mode is "))
 	b.WriteString(cursorModeHelpStyle.Render(p.cursorMode.String()))

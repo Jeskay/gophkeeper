@@ -5,3 +5,5 @@ import tea "github.com/charmbracelet/bubbletea"
 type SpawnMsg struct {
 	Parent tea.Model
 }
+
+type AuthMsg struct{}

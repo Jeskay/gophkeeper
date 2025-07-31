@@ -1,4 +1,4 @@
-package ui
+package presentation
 
 import (
 	"fmt"
@@ -10,12 +10,13 @@ import (
 )
 
 type item struct {
+	id        int
 	text      string
 	available bool
 }
 
-func NewItem(value string, available bool) item {
-	return item{text: value, available: available}
+func NewMenuItem(id int, text string, available bool) item {
+	return item{id: id, text: text, available: available}
 }
 
 func (i item) FilterValue() string { return "" }

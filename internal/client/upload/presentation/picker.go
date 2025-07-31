@@ -1,9 +1,8 @@
-package ui
+package presentation
 
 import (
 	"errors"
 	"gophkeeper/internal/client/tui"
-	"log"
 	"strings"
 	"time"
 
@@ -11,18 +10,18 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func NewFilePicker(dir string) *FilePicker {
+func NewFilePicker(dir string, onComplete func(file string) error) *FilePicker {
 	fp := filepicker.New()
 	fp.AllowedTypes = []string{".mod", ".sum", ".go", ".txt", ".md"}
 	fp.CurrentDirectory = dir
-	return &FilePicker{filePicker: fp}
+	return &FilePicker{filePicker: fp, onComplete: onComplete}
 }
 
 type FilePicker struct {
-	filePicker   filepicker.Model
-	parentModel  tea.Model
-	selectedFile string
-	err          error
+	filePicker  filepicker.Model
+	parentModel tea.Model
+	onComplete  func(string) error
+	err         error
 }
 
 type clearErrorMsg struct{}
@@ -58,7 +57,10 @@ func (m FilePicker) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Did the user select a file?
 	if didSelect, path := m.filePicker.DidSelectFile(msg); didSelect {
 		// Get the path of the selected file.
-		m.selectedFile = path
+		m.err = m.onComplete(path)
+		if m.err != nil {
+			return m, tea.Batch(cmd, clearErrorAfter(5*time.Second))
+		}
 	}
 
 	// Did the user select a disabled file?
@@ -66,7 +68,6 @@ func (m FilePicker) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if didSelect, path := m.filePicker.DidSelectDisabledFile(msg); didSelect {
 		// Let's clear the selectedFile and display an error.
 		m.err = errors.New(path + " is not valid.")
-		m.selectedFile = ""
 		return m, tea.Batch(cmd, clearErrorAfter(2*time.Second))
 	}
 
@@ -77,12 +78,7 @@ func (m FilePicker) View() string {
 	var s strings.Builder
 	s.WriteString("\n  ")
 	if m.err != nil {
-		log.Println("error before view")
 		s.WriteString(m.filePicker.Styles.DisabledFile.Render(m.err.Error()))
-	} else if m.selectedFile == "" {
-		s.WriteString("Pick a file:")
-	} else {
-		s.WriteString("Selected file: " + m.filePicker.Styles.Selected.Render(m.selectedFile))
 	}
 	s.WriteString("\n\n" + m.filePicker.View() + "\n")
 	return s.String()

@@ -1,4 +1,4 @@
-package ui
+package presentation
 
 import (
 	"gophkeeper/internal/client/tui"
@@ -25,7 +25,11 @@ var (
 	}
 )
 
-func NewMenu(items []list.Item, actions map[string]tea.Model) Menu {
+func NewActionMenu(actions []*MenuAction, checkAuth func() bool) Menu {
+	var items = make([]list.Item, len(actions))
+	for i, a := range actions {
+		items[i] = NewMenuItem(i, a.Name, !a.AuthRequired)
+	}
 	const defaultWidth = 20
 	const listHeight = 14
 	l := list.New(items, itemDelegate{}, defaultWidth, listHeight)
@@ -35,14 +39,15 @@ func NewMenu(items []list.Item, actions map[string]tea.Model) Menu {
 	l.Styles.Title = titleStyle
 	l.Styles.PaginationStyle = paginationStyle
 	l.Styles.HelpStyle = helpStyle
-	return Menu{list: l, actions: actions}
+	return Menu{list: l, actions: actions, checkAuth: checkAuth}
 }
 
 type Menu struct {
-	list     list.Model
-	choice   string
-	quitting bool
-	actions  map[string]tea.Model
+	list      list.Model
+	choiceId  int
+	quitting  bool
+	actions   []*MenuAction
+	checkAuth func() bool
 }
 
 func (m Menu) Init() tea.Cmd {
@@ -60,6 +65,18 @@ func (m Menu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.list.SetWidth(msg.Width)
+	case tui.AuthMsg:
+		if m.checkAuth() {
+			for i, v := range m.list.Items() {
+				itemCopy := v.(item)
+				if m.actions[itemCopy.id].AuthRequired {
+					itemCopy.available = true
+				} else {
+					itemCopy.available = false
+				}
+				m.list.SetItem(i, itemCopy)
+			}
+		}
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "q", "ctrl+c":
@@ -68,11 +85,11 @@ func (m Menu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			i, ok := m.list.SelectedItem().(item)
 			if ok {
-				m.choice = i.text
+				m.choiceId = i.id
 			}
 			if i.available {
-				nxtM := m.actions[m.choice]
-				newModel, cmd := nxtM.Update(tui.SpawnMsg{Parent: m})
+				nxtM := m.actions[m.choiceId]
+				newModel, cmd := nxtM.Model.Update(tui.SpawnMsg{Parent: m})
 				return newModel, cmd
 			}
 		}

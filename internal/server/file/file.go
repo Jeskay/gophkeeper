@@ -1,15 +1,23 @@
 package file
 
-import "path"
+import (
+	fPkg "gophkeeper/pkg/file"
+	"os"
+	"path"
+)
 
 type fileService struct {
-	fileWriter FileWriter
-	fileReader FileReader
+	fileWriter fPkg.FileWriter
+	fileReader fPkg.FileReader
 	prefix     string
 }
 
 func NewService(prefix string) *fileService {
-	return &fileService{prefix: prefix}
+	crntDir, err := os.Getwd()
+	if err == nil {
+		prefix = crntDir //TODO: check for directory and store in prefix folder
+	}
+	return &fileService{prefix: prefix, fileWriter: fPkg.NewFileWriter(), fileReader: fPkg.NewFileReader()}
 }
 
 func (s *fileService) SaveFile(name string, data []byte) error {
