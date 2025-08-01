@@ -6,6 +6,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+type fileInfo struct {
+	Id     int64
+	Name   string
+	Status string
+	Size   string
+}
 type downloadPresenter struct {
 	controller control.Controller
 }
@@ -15,16 +21,16 @@ func NewPresenter(controller control.Controller) *downloadPresenter {
 }
 
 func (p *downloadPresenter) CreateTable() tea.Model {
-	loadFunc := func() []string {
+	loadFunc := func() ([]fileInfo, error) {
 		list, err := p.controller.DownloadFileList()
 		if err != nil {
-			return []string{err.Error()}
+			return []fileInfo{}, err
 		}
-		names := make([]string, len(list))
+		names := make([]fileInfo, len(list))
 		for i, n := range list {
-			names[i] = n.Name
+			names[i] = fileInfo{Name: n.Name, Status: n.Status, Id: n.Id, Size: n.Size}
 		}
-		return names
+		return names, nil
 	}
 	return NewList(p.controller.DownloadFile, loadFunc)
 }

@@ -3,6 +3,7 @@ package transport
 import (
 	"bytes"
 	"context"
+	"errors"
 	proto "gophkeeper/api/protos"
 	"gophkeeper/internal/server/auth"
 	"gophkeeper/internal/server/db"
@@ -43,11 +44,18 @@ func (k *KeeperServer) GetFiles(ctx context.Context, r *proto.GetRequest) (*prot
 	if err != nil {
 		return &proto.GetResponse{}, err
 	}
-	fNames := make([]string, len(files))
+	fInfos := make([]*proto.FileInfo, len(files))
 	for i, f := range files {
-		fNames[i] = f.Name
+		status := f.Status.Proto()
+		id := &proto.FileInfo_Id{Id: f.Id}
+		fInfos[i] = &proto.FileInfo{
+			Name:           f.Name,
+			OptionalStatus: &status,
+			OptionalId:     id,
+			Size:           uint32(f.Size),
+		}
 	}
-	return &proto.GetResponse{Files: fNames}, nil
+	return &proto.GetResponse{Files: fInfos}, nil
 }
 
 func (k *KeeperServer) SaveFile(stream proto.Gophkeeper_SaveFileServer) error {
@@ -58,10 +66,15 @@ func (k *KeeperServer) SaveFile(stream proto.Gophkeeper_SaveFileServer) error {
 	if err != nil {
 		return err
 	}
-	fName := req.GetInfo().GetName()
-	fType := req.GetInfo().GetFileType()
+	fInfo := req.GetInfo()
+	if fInfo == nil {
+		return errors.New("no file info provided")
+	}
+	fName := fInfo.GetName()
+	fType := fInfo.GetFileType()
+	fSize := fInfo.GetSize()
 
-	fId, err := k.dbService.CreateFile(context.Background(), dto.File{Name: fName + fType, Status: dto.Processing}, userId)
+	fId, err := k.dbService.CreateFile(context.Background(), dto.File{Name: fName + fType, Status: dto.Processing, Size: int(fSize)}, userId)
 	if err != nil {
 		return err
 	}

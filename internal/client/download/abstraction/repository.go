@@ -1,9 +1,10 @@
 package abstraction
 
 type FileData struct {
-	Id   int64
-	Name string
-	Size string
+	Id     int64
+	Name   string
+	Size   string
+	Status string
 }
 
 type downloadRepository struct {

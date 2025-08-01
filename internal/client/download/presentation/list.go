@@ -2,6 +2,7 @@ package presentation
 
 import (
 	"gophkeeper/internal/client/tui"
+	"strconv"
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,12 +13,12 @@ var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
 
-func NewList(download func(name string) error, loadList func() []string) List {
+func NewList(download func(name string) error, loadList func() ([]fileInfo, error)) List {
 	columns := []table.Column{
 		{Title: "Id", Width: 4},
 		{Title: "Title", Width: 10},
-		{Title: "Path", Width: 20},
 		{Title: "Size", Width: 10},
+		{Title: "Status", Width: 10},
 	}
 	t := table.New(
 		table.WithColumns(columns),
@@ -41,7 +42,7 @@ type List struct {
 	table        table.Model
 	parentModel  tea.Model
 	downloadFunc func(string) error //TODO: make error handling for those functions
-	loadListFunc func() []string
+	loadListFunc func() ([]fileInfo, error)
 }
 
 func (l List) Init() tea.Cmd { return nil }
@@ -84,10 +85,14 @@ func (l List) View() string {
 }
 
 func (l *List) updateRows() {
-	fNames := l.loadListFunc()
-	rows := make([]table.Row, len(fNames))
-	for i, n := range fNames {
-		rows[i] = table.Row{"1", n, "cloud", "1Mb"}
+	fInfos, err := l.loadListFunc()
+	if err != nil {
+		return
+	}
+	rows := make([]table.Row, len(fInfos))
+	for i, n := range fInfos {
+		id := strconv.FormatInt(n.Id, 10)
+		rows[i] = table.Row{id, n.Name, n.Size + "B", n.Status}
 	}
 	l.table.SetRows(rows)
 }

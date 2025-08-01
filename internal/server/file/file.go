@@ -15,8 +15,13 @@ type fileService struct {
 func NewService(prefix string) *fileService {
 	crntDir, err := os.Getwd()
 	if err == nil {
-		prefix = crntDir //TODO: check for directory and store in prefix folder
+		if _, err := os.Stat(prefix); os.IsNotExist(err) {
+			if err = os.Mkdir(prefix, 0755); err != nil {
+				prefix = crntDir
+			}
+		}
 	}
+
 	return &fileService{prefix: prefix, fileWriter: fPkg.NewFileWriter(), fileReader: fPkg.NewFileReader()}
 }
 

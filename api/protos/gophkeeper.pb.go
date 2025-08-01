@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v6.31.1
-// source: gophkeeper.proto
+// source: api/protos/gophkeeper.proto
 
 package gophkeeper
 
@@ -21,6 +21,55 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type FileStatus int32
+
+const (
+	FileStatus_AVAILABLE  FileStatus = 0
+	FileStatus_PROCESSING FileStatus = 1
+	FileStatus_RESTRICTED FileStatus = 2
+)
+
+// Enum value maps for FileStatus.
+var (
+	FileStatus_name = map[int32]string{
+		0: "AVAILABLE",
+		1: "PROCESSING",
+		2: "RESTRICTED",
+	}
+	FileStatus_value = map[string]int32{
+		"AVAILABLE":  0,
+		"PROCESSING": 1,
+		"RESTRICTED": 2,
+	}
+)
+
+func (x FileStatus) Enum() *FileStatus {
+	p := new(FileStatus)
+	*p = x
+	return p
+}
+
+func (x FileStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FileStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_protos_gophkeeper_proto_enumTypes[0].Descriptor()
+}
+
+func (FileStatus) Type() protoreflect.EnumType {
+	return &file_api_protos_gophkeeper_proto_enumTypes[0]
+}
+
+func (x FileStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FileStatus.Descriptor instead.
+func (FileStatus) EnumDescriptor() ([]byte, []int) {
+	return file_api_protos_gophkeeper_proto_rawDescGZIP(), []int{0}
+}
+
 type LoginRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -31,7 +80,7 @@ type LoginRequest struct {
 
 func (x *LoginRequest) Reset() {
 	*x = LoginRequest{}
-	mi := &file_gophkeeper_proto_msgTypes[0]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +92,7 @@ func (x *LoginRequest) String() string {
 func (*LoginRequest) ProtoMessage() {}
 
 func (x *LoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gophkeeper_proto_msgTypes[0]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +105,7 @@ func (x *LoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
 func (*LoginRequest) Descriptor() ([]byte, []int) {
-	return file_gophkeeper_proto_rawDescGZIP(), []int{0}
+	return file_api_protos_gophkeeper_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *LoginRequest) GetName() string {
@@ -83,7 +132,7 @@ type LoginResponse struct {
 
 func (x *LoginResponse) Reset() {
 	*x = LoginResponse{}
-	mi := &file_gophkeeper_proto_msgTypes[1]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -95,7 +144,7 @@ func (x *LoginResponse) String() string {
 func (*LoginResponse) ProtoMessage() {}
 
 func (x *LoginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gophkeeper_proto_msgTypes[1]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -108,7 +157,7 @@ func (x *LoginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
 func (*LoginResponse) Descriptor() ([]byte, []int) {
-	return file_gophkeeper_proto_rawDescGZIP(), []int{1}
+	return file_api_protos_gophkeeper_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *LoginResponse) GetStatus() int64 {
@@ -135,7 +184,7 @@ type RegisterRequest struct {
 
 func (x *RegisterRequest) Reset() {
 	*x = RegisterRequest{}
-	mi := &file_gophkeeper_proto_msgTypes[2]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -147,7 +196,7 @@ func (x *RegisterRequest) String() string {
 func (*RegisterRequest) ProtoMessage() {}
 
 func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gophkeeper_proto_msgTypes[2]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -160,7 +209,7 @@ func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
 func (*RegisterRequest) Descriptor() ([]byte, []int) {
-	return file_gophkeeper_proto_rawDescGZIP(), []int{2}
+	return file_api_protos_gophkeeper_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *RegisterRequest) GetName() string {
@@ -185,7 +234,7 @@ type RegisterResponse struct {
 
 func (x *RegisterResponse) Reset() {
 	*x = RegisterResponse{}
-	mi := &file_gophkeeper_proto_msgTypes[3]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -197,7 +246,7 @@ func (x *RegisterResponse) String() string {
 func (*RegisterResponse) ProtoMessage() {}
 
 func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gophkeeper_proto_msgTypes[3]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -210,7 +259,7 @@ func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
 func (*RegisterResponse) Descriptor() ([]byte, []int) {
-	return file_gophkeeper_proto_rawDescGZIP(), []int{3}
+	return file_api_protos_gophkeeper_proto_rawDescGZIP(), []int{3}
 }
 
 type GetRequest struct {
@@ -221,7 +270,7 @@ type GetRequest struct {
 
 func (x *GetRequest) Reset() {
 	*x = GetRequest{}
-	mi := &file_gophkeeper_proto_msgTypes[4]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -233,7 +282,7 @@ func (x *GetRequest) String() string {
 func (*GetRequest) ProtoMessage() {}
 
 func (x *GetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gophkeeper_proto_msgTypes[4]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -246,19 +295,19 @@ func (x *GetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRequest.ProtoReflect.Descriptor instead.
 func (*GetRequest) Descriptor() ([]byte, []int) {
-	return file_gophkeeper_proto_rawDescGZIP(), []int{4}
+	return file_api_protos_gophkeeper_proto_rawDescGZIP(), []int{4}
 }
 
 type GetResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Files         []string               `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
+	Files         []*FileInfo            `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetResponse) Reset() {
 	*x = GetResponse{}
-	mi := &file_gophkeeper_proto_msgTypes[5]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -270,7 +319,7 @@ func (x *GetResponse) String() string {
 func (*GetResponse) ProtoMessage() {}
 
 func (x *GetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gophkeeper_proto_msgTypes[5]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -283,10 +332,10 @@ func (x *GetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetResponse.ProtoReflect.Descriptor instead.
 func (*GetResponse) Descriptor() ([]byte, []int) {
-	return file_gophkeeper_proto_rawDescGZIP(), []int{5}
+	return file_api_protos_gophkeeper_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GetResponse) GetFiles() []string {
+func (x *GetResponse) GetFiles() []*FileInfo {
 	if x != nil {
 		return x.Files
 	}
@@ -306,7 +355,7 @@ type SaveRequest struct {
 
 func (x *SaveRequest) Reset() {
 	*x = SaveRequest{}
-	mi := &file_gophkeeper_proto_msgTypes[6]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -318,7 +367,7 @@ func (x *SaveRequest) String() string {
 func (*SaveRequest) ProtoMessage() {}
 
 func (x *SaveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gophkeeper_proto_msgTypes[6]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -331,7 +380,7 @@ func (x *SaveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveRequest.ProtoReflect.Descriptor instead.
 func (*SaveRequest) Descriptor() ([]byte, []int) {
-	return file_gophkeeper_proto_rawDescGZIP(), []int{6}
+	return file_api_protos_gophkeeper_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *SaveRequest) GetData() isSaveRequest_Data {
@@ -384,7 +433,7 @@ type SaveResponse struct {
 
 func (x *SaveResponse) Reset() {
 	*x = SaveResponse{}
-	mi := &file_gophkeeper_proto_msgTypes[7]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -396,7 +445,7 @@ func (x *SaveResponse) String() string {
 func (*SaveResponse) ProtoMessage() {}
 
 func (x *SaveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gophkeeper_proto_msgTypes[7]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -409,7 +458,7 @@ func (x *SaveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SaveResponse.ProtoReflect.Descriptor instead.
 func (*SaveResponse) Descriptor() ([]byte, []int) {
-	return file_gophkeeper_proto_rawDescGZIP(), []int{7}
+	return file_api_protos_gophkeeper_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *SaveResponse) GetSize() uint32 {
@@ -420,16 +469,25 @@ func (x *SaveResponse) GetSize() uint32 {
 }
 
 type FileInfo struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	FileType      string                 `protobuf:"bytes,2,opt,name=file_type,json=fileType,proto3" json:"file_type,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Name     string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	FileType string                 `protobuf:"bytes,2,opt,name=file_type,json=fileType,proto3" json:"file_type,omitempty"`
+	Size     uint32                 `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
+	// Types that are valid to be assigned to OptionalStatus:
+	//
+	//	*FileInfo_Status
+	OptionalStatus isFileInfo_OptionalStatus `protobuf_oneof:"optional_status"`
+	// Types that are valid to be assigned to OptionalId:
+	//
+	//	*FileInfo_Id
+	OptionalId    isFileInfo_OptionalId `protobuf_oneof:"optional_id"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FileInfo) Reset() {
 	*x = FileInfo{}
-	mi := &file_gophkeeper_proto_msgTypes[8]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -441,7 +499,7 @@ func (x *FileInfo) String() string {
 func (*FileInfo) ProtoMessage() {}
 
 func (x *FileInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_gophkeeper_proto_msgTypes[8]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -454,7 +512,7 @@ func (x *FileInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileInfo.ProtoReflect.Descriptor instead.
 func (*FileInfo) Descriptor() ([]byte, []int) {
-	return file_gophkeeper_proto_rawDescGZIP(), []int{8}
+	return file_api_protos_gophkeeper_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *FileInfo) GetName() string {
@@ -471,6 +529,65 @@ func (x *FileInfo) GetFileType() string {
 	return ""
 }
 
+func (x *FileInfo) GetSize() uint32 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *FileInfo) GetOptionalStatus() isFileInfo_OptionalStatus {
+	if x != nil {
+		return x.OptionalStatus
+	}
+	return nil
+}
+
+func (x *FileInfo) GetStatus() FileStatus {
+	if x != nil {
+		if x, ok := x.OptionalStatus.(*FileInfo_Status); ok {
+			return x.Status
+		}
+	}
+	return FileStatus_AVAILABLE
+}
+
+func (x *FileInfo) GetOptionalId() isFileInfo_OptionalId {
+	if x != nil {
+		return x.OptionalId
+	}
+	return nil
+}
+
+func (x *FileInfo) GetId() int64 {
+	if x != nil {
+		if x, ok := x.OptionalId.(*FileInfo_Id); ok {
+			return x.Id
+		}
+	}
+	return 0
+}
+
+type isFileInfo_OptionalStatus interface {
+	isFileInfo_OptionalStatus()
+}
+
+type FileInfo_Status struct {
+	Status FileStatus `protobuf:"varint,4,opt,name=status,proto3,enum=gophkeeper.FileStatus,oneof"`
+}
+
+func (*FileInfo_Status) isFileInfo_OptionalStatus() {}
+
+type isFileInfo_OptionalId interface {
+	isFileInfo_OptionalId()
+}
+
+type FileInfo_Id struct {
+	Id int64 `protobuf:"varint,5,opt,name=id,proto3,oneof"`
+}
+
+func (*FileInfo_Id) isFileInfo_OptionalId() {}
+
 type DownloadRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -480,7 +597,7 @@ type DownloadRequest struct {
 
 func (x *DownloadRequest) Reset() {
 	*x = DownloadRequest{}
-	mi := &file_gophkeeper_proto_msgTypes[9]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -492,7 +609,7 @@ func (x *DownloadRequest) String() string {
 func (*DownloadRequest) ProtoMessage() {}
 
 func (x *DownloadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gophkeeper_proto_msgTypes[9]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -505,7 +622,7 @@ func (x *DownloadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DownloadRequest.ProtoReflect.Descriptor instead.
 func (*DownloadRequest) Descriptor() ([]byte, []int) {
-	return file_gophkeeper_proto_rawDescGZIP(), []int{9}
+	return file_api_protos_gophkeeper_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *DownloadRequest) GetName() string {
@@ -528,7 +645,7 @@ type DownloadResponse struct {
 
 func (x *DownloadResponse) Reset() {
 	*x = DownloadResponse{}
-	mi := &file_gophkeeper_proto_msgTypes[10]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -540,7 +657,7 @@ func (x *DownloadResponse) String() string {
 func (*DownloadResponse) ProtoMessage() {}
 
 func (x *DownloadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gophkeeper_proto_msgTypes[10]
+	mi := &file_api_protos_gophkeeper_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -553,7 +670,7 @@ func (x *DownloadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DownloadResponse.ProtoReflect.Descriptor instead.
 func (*DownloadResponse) Descriptor() ([]byte, []int) {
-	return file_gophkeeper_proto_rawDescGZIP(), []int{10}
+	return file_api_protos_gophkeeper_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *DownloadResponse) GetData() isDownloadResponse_Data {
@@ -597,11 +714,11 @@ func (*DownloadResponse_Info) isDownloadResponse_Data() {}
 
 func (*DownloadResponse_ChunkData) isDownloadResponse_Data() {}
 
-var File_gophkeeper_proto protoreflect.FileDescriptor
+var File_api_protos_gophkeeper_proto protoreflect.FileDescriptor
 
-const file_gophkeeper_proto_rawDesc = "" +
+const file_api_protos_gophkeeper_proto_rawDesc = "" +
 	"\n" +
-	"\x10gophkeeper.proto\x12\n" +
+	"\x1bapi/protos/gophkeeper.proto\x12\n" +
 	"gophkeeper\">\n" +
 	"\fLoginRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
@@ -614,26 +731,38 @@ const file_gophkeeper_proto_rawDesc = "" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"\x12\n" +
 	"\x10RegisterResponse\"\f\n" +
 	"\n" +
-	"GetRequest\"#\n" +
-	"\vGetResponse\x12\x14\n" +
-	"\x05files\x18\x01 \x03(\tR\x05files\"b\n" +
+	"GetRequest\"9\n" +
+	"\vGetResponse\x12*\n" +
+	"\x05files\x18\x01 \x03(\v2\x14.gophkeeper.FileInfoR\x05files\"b\n" +
 	"\vSaveRequest\x12*\n" +
 	"\x04info\x18\x01 \x01(\v2\x14.gophkeeper.FileInfoH\x00R\x04info\x12\x1f\n" +
 	"\n" +
 	"chunk_data\x18\x02 \x01(\fH\x00R\tchunkDataB\x06\n" +
 	"\x04data\"\"\n" +
 	"\fSaveResponse\x12\x12\n" +
-	"\x04size\x18\x01 \x01(\rR\x04size\";\n" +
+	"\x04size\x18\x01 \x01(\rR\x04size\"\xb5\x01\n" +
 	"\bFileInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
-	"\tfile_type\x18\x02 \x01(\tR\bfileType\"%\n" +
+	"\tfile_type\x18\x02 \x01(\tR\bfileType\x12\x12\n" +
+	"\x04size\x18\x03 \x01(\rR\x04size\x120\n" +
+	"\x06status\x18\x04 \x01(\x0e2\x16.gophkeeper.FileStatusH\x00R\x06status\x12\x10\n" +
+	"\x02id\x18\x05 \x01(\x03H\x01R\x02idB\x11\n" +
+	"\x0foptional_statusB\r\n" +
+	"\voptional_id\"%\n" +
 	"\x0fDownloadRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"g\n" +
 	"\x10DownloadResponse\x12*\n" +
 	"\x04info\x18\x01 \x01(\v2\x14.gophkeeper.FileInfoH\x00R\x04info\x12\x1f\n" +
 	"\n" +
 	"chunk_data\x18\x02 \x01(\fH\x00R\tchunkDataB\x06\n" +
-	"\x04data2\xe6\x02\n" +
+	"\x04data*;\n" +
+	"\n" +
+	"FileStatus\x12\r\n" +
+	"\tAVAILABLE\x10\x00\x12\x0e\n" +
+	"\n" +
+	"PROCESSING\x10\x01\x12\x0e\n" +
+	"\n" +
+	"RESTRICTED\x10\x022\xe6\x02\n" +
 	"\n" +
 	"gophkeeper\x12>\n" +
 	"\x05Login\x12\x18.gophkeeper.LoginRequest\x1a\x19.gophkeeper.LoginResponse\"\x00\x12G\n" +
@@ -643,61 +772,69 @@ const file_gophkeeper_proto_rawDesc = "" +
 	"\fDownloadFile\x12\x1b.gophkeeper.DownloadRequest\x1a\x1c.gophkeeper.DownloadResponse\"\x000\x01B\x0eZ\f./gophkeeperb\x06proto3"
 
 var (
-	file_gophkeeper_proto_rawDescOnce sync.Once
-	file_gophkeeper_proto_rawDescData []byte
+	file_api_protos_gophkeeper_proto_rawDescOnce sync.Once
+	file_api_protos_gophkeeper_proto_rawDescData []byte
 )
 
-func file_gophkeeper_proto_rawDescGZIP() []byte {
-	file_gophkeeper_proto_rawDescOnce.Do(func() {
-		file_gophkeeper_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_gophkeeper_proto_rawDesc), len(file_gophkeeper_proto_rawDesc)))
+func file_api_protos_gophkeeper_proto_rawDescGZIP() []byte {
+	file_api_protos_gophkeeper_proto_rawDescOnce.Do(func() {
+		file_api_protos_gophkeeper_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_api_protos_gophkeeper_proto_rawDesc), len(file_api_protos_gophkeeper_proto_rawDesc)))
 	})
-	return file_gophkeeper_proto_rawDescData
+	return file_api_protos_gophkeeper_proto_rawDescData
 }
 
-var file_gophkeeper_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
-var file_gophkeeper_proto_goTypes = []any{
-	(*LoginRequest)(nil),     // 0: gophkeeper.LoginRequest
-	(*LoginResponse)(nil),    // 1: gophkeeper.LoginResponse
-	(*RegisterRequest)(nil),  // 2: gophkeeper.RegisterRequest
-	(*RegisterResponse)(nil), // 3: gophkeeper.RegisterResponse
-	(*GetRequest)(nil),       // 4: gophkeeper.GetRequest
-	(*GetResponse)(nil),      // 5: gophkeeper.GetResponse
-	(*SaveRequest)(nil),      // 6: gophkeeper.SaveRequest
-	(*SaveResponse)(nil),     // 7: gophkeeper.SaveResponse
-	(*FileInfo)(nil),         // 8: gophkeeper.FileInfo
-	(*DownloadRequest)(nil),  // 9: gophkeeper.DownloadRequest
-	(*DownloadResponse)(nil), // 10: gophkeeper.DownloadResponse
+var file_api_protos_gophkeeper_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_api_protos_gophkeeper_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_api_protos_gophkeeper_proto_goTypes = []any{
+	(FileStatus)(0),          // 0: gophkeeper.FileStatus
+	(*LoginRequest)(nil),     // 1: gophkeeper.LoginRequest
+	(*LoginResponse)(nil),    // 2: gophkeeper.LoginResponse
+	(*RegisterRequest)(nil),  // 3: gophkeeper.RegisterRequest
+	(*RegisterResponse)(nil), // 4: gophkeeper.RegisterResponse
+	(*GetRequest)(nil),       // 5: gophkeeper.GetRequest
+	(*GetResponse)(nil),      // 6: gophkeeper.GetResponse
+	(*SaveRequest)(nil),      // 7: gophkeeper.SaveRequest
+	(*SaveResponse)(nil),     // 8: gophkeeper.SaveResponse
+	(*FileInfo)(nil),         // 9: gophkeeper.FileInfo
+	(*DownloadRequest)(nil),  // 10: gophkeeper.DownloadRequest
+	(*DownloadResponse)(nil), // 11: gophkeeper.DownloadResponse
 }
-var file_gophkeeper_proto_depIdxs = []int32{
-	8,  // 0: gophkeeper.SaveRequest.info:type_name -> gophkeeper.FileInfo
-	8,  // 1: gophkeeper.DownloadResponse.info:type_name -> gophkeeper.FileInfo
-	0,  // 2: gophkeeper.gophkeeper.Login:input_type -> gophkeeper.LoginRequest
-	2,  // 3: gophkeeper.gophkeeper.Register:input_type -> gophkeeper.RegisterRequest
-	6,  // 4: gophkeeper.gophkeeper.SaveFile:input_type -> gophkeeper.SaveRequest
-	4,  // 5: gophkeeper.gophkeeper.GetFiles:input_type -> gophkeeper.GetRequest
-	9,  // 6: gophkeeper.gophkeeper.DownloadFile:input_type -> gophkeeper.DownloadRequest
-	1,  // 7: gophkeeper.gophkeeper.Login:output_type -> gophkeeper.LoginResponse
-	3,  // 8: gophkeeper.gophkeeper.Register:output_type -> gophkeeper.RegisterResponse
-	7,  // 9: gophkeeper.gophkeeper.SaveFile:output_type -> gophkeeper.SaveResponse
-	5,  // 10: gophkeeper.gophkeeper.GetFiles:output_type -> gophkeeper.GetResponse
-	10, // 11: gophkeeper.gophkeeper.DownloadFile:output_type -> gophkeeper.DownloadResponse
-	7,  // [7:12] is the sub-list for method output_type
-	2,  // [2:7] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+var file_api_protos_gophkeeper_proto_depIdxs = []int32{
+	9,  // 0: gophkeeper.GetResponse.files:type_name -> gophkeeper.FileInfo
+	9,  // 1: gophkeeper.SaveRequest.info:type_name -> gophkeeper.FileInfo
+	0,  // 2: gophkeeper.FileInfo.status:type_name -> gophkeeper.FileStatus
+	9,  // 3: gophkeeper.DownloadResponse.info:type_name -> gophkeeper.FileInfo
+	1,  // 4: gophkeeper.gophkeeper.Login:input_type -> gophkeeper.LoginRequest
+	3,  // 5: gophkeeper.gophkeeper.Register:input_type -> gophkeeper.RegisterRequest
+	7,  // 6: gophkeeper.gophkeeper.SaveFile:input_type -> gophkeeper.SaveRequest
+	5,  // 7: gophkeeper.gophkeeper.GetFiles:input_type -> gophkeeper.GetRequest
+	10, // 8: gophkeeper.gophkeeper.DownloadFile:input_type -> gophkeeper.DownloadRequest
+	2,  // 9: gophkeeper.gophkeeper.Login:output_type -> gophkeeper.LoginResponse
+	4,  // 10: gophkeeper.gophkeeper.Register:output_type -> gophkeeper.RegisterResponse
+	8,  // 11: gophkeeper.gophkeeper.SaveFile:output_type -> gophkeeper.SaveResponse
+	6,  // 12: gophkeeper.gophkeeper.GetFiles:output_type -> gophkeeper.GetResponse
+	11, // 13: gophkeeper.gophkeeper.DownloadFile:output_type -> gophkeeper.DownloadResponse
+	9,  // [9:14] is the sub-list for method output_type
+	4,  // [4:9] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
-func init() { file_gophkeeper_proto_init() }
-func file_gophkeeper_proto_init() {
-	if File_gophkeeper_proto != nil {
+func init() { file_api_protos_gophkeeper_proto_init() }
+func file_api_protos_gophkeeper_proto_init() {
+	if File_api_protos_gophkeeper_proto != nil {
 		return
 	}
-	file_gophkeeper_proto_msgTypes[6].OneofWrappers = []any{
+	file_api_protos_gophkeeper_proto_msgTypes[6].OneofWrappers = []any{
 		(*SaveRequest_Info)(nil),
 		(*SaveRequest_ChunkData)(nil),
 	}
-	file_gophkeeper_proto_msgTypes[10].OneofWrappers = []any{
+	file_api_protos_gophkeeper_proto_msgTypes[8].OneofWrappers = []any{
+		(*FileInfo_Status)(nil),
+		(*FileInfo_Id)(nil),
+	}
+	file_api_protos_gophkeeper_proto_msgTypes[10].OneofWrappers = []any{
 		(*DownloadResponse_Info)(nil),
 		(*DownloadResponse_ChunkData)(nil),
 	}
@@ -705,17 +842,18 @@ func file_gophkeeper_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_gophkeeper_proto_rawDesc), len(file_gophkeeper_proto_rawDesc)),
-			NumEnums:      0,
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_protos_gophkeeper_proto_rawDesc), len(file_api_protos_gophkeeper_proto_rawDesc)),
+			NumEnums:      1,
 			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_gophkeeper_proto_goTypes,
-		DependencyIndexes: file_gophkeeper_proto_depIdxs,
-		MessageInfos:      file_gophkeeper_proto_msgTypes,
+		GoTypes:           file_api_protos_gophkeeper_proto_goTypes,
+		DependencyIndexes: file_api_protos_gophkeeper_proto_depIdxs,
+		EnumInfos:         file_api_protos_gophkeeper_proto_enumTypes,
+		MessageInfos:      file_api_protos_gophkeeper_proto_msgTypes,
 	}.Build()
-	File_gophkeeper_proto = out.File
-	file_gophkeeper_proto_goTypes = nil
-	file_gophkeeper_proto_depIdxs = nil
+	File_api_protos_gophkeeper_proto = out.File
+	file_api_protos_gophkeeper_proto_goTypes = nil
+	file_api_protos_gophkeeper_proto_depIdxs = nil
 }

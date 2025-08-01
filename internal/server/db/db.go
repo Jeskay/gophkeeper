@@ -116,6 +116,7 @@ func (s *databaseService) GetUserFiles(ctx context.Context, userId int64) ([]dto
 		"id",
 		"file_name",
 		"file_status",
+		"file_size",
 	).From("files").Where(
 		sq.Eq{"owner_id": userId},
 	)
@@ -129,12 +130,13 @@ func (s *databaseService) GetUserFiles(ctx context.Context, userId int64) ([]dto
 			id      int64
 			fName   string
 			fStatus dto.FileStatus
+			fSize   int
 		)
-		err := rows.Scan(&id, &fName, &fStatus)
+		err := rows.Scan(&id, &fName, &fStatus, &fSize)
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, dto.File{Id: id, Name: fName, Status: fStatus})
+		files = append(files, dto.File{Id: id, Name: fName, Status: fStatus, Size: fSize})
 	}
 	return files, nil
 }
@@ -146,10 +148,12 @@ func (s *databaseService) CreateFile(ctx context.Context, file dto.File, userId 
 	).Columns(
 		"file_name",
 		"file_status",
+		"file_size",
 		"owner_id",
 	).Values(
 		file.Name,
 		file.Status,
+		file.Size,
 		userId,
 	).Suffix("RETURNING id")
 	row := query.QueryRowContext(ctx)

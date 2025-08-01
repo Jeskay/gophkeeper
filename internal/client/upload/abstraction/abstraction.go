@@ -16,7 +16,7 @@ type DataReader interface {
 }
 
 type UploadStream interface {
-	Init(fileName string, fileType string) error
+	Init(fileName string, fileType string, size uint32) error
 	Upload(data []byte) error
 	Close() (uint32, error)
 }

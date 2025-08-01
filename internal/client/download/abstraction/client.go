@@ -3,6 +3,7 @@ package abstraction
 import (
 	"context"
 	proto "gophkeeper/api/protos"
+	"strconv"
 )
 
 type downloadClient struct {
@@ -32,7 +33,9 @@ func (c *downloadClient) GetFiles(ctx context.Context) ([]*FileData, error) {
 	}
 	fd := make([]*FileData, len(res.Files))
 	for i, f := range res.Files {
-		fd[i] = &FileData{Name: f} //TODO: provide all file information from server
+		size := strconv.FormatUint(uint64(f.GetSize()), 10)
+		status := f.GetStatus().String()
+		fd[i] = &FileData{Name: f.Name + f.FileType, Id: f.GetId(), Size: size, Status: status}
 	}
 	return fd, nil
 }

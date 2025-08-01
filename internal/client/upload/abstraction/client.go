@@ -29,12 +29,13 @@ func (c *uploadClient) StartUpload(ctx context.Context) (UploadStream, error) {
 	return NewStream(ctx, c.grpcClient)
 }
 
-func (s *uploadStream) Init(fileName, fileType string) error {
+func (s *uploadStream) Init(fileName, fileType string, size uint32) error {
 	req := &proto.SaveRequest{
 		Data: &proto.SaveRequest_Info{
 			Info: &proto.FileInfo{
 				Name:     fileName,
 				FileType: fileType,
+				Size:     size,
 			},
 		},
 	}
