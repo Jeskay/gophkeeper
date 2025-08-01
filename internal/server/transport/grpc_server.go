@@ -61,7 +61,7 @@ func (k *KeeperServer) SaveFile(stream proto.Gophkeeper_SaveFileServer) error {
 	fName := req.GetInfo().GetName()
 	fType := req.GetInfo().GetFileType()
 
-	fId, err := k.dbService.CreateFile(context.Background(), dto.File{Name: fName, Status: dto.Processing}, userId)
+	fId, err := k.dbService.CreateFile(context.Background(), dto.File{Name: fName + fType, Status: dto.Processing}, userId)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,10 @@ func (k *KeeperServer) SaveFile(stream proto.Gophkeeper_SaveFileServer) error {
 }
 
 func (k *KeeperServer) DownloadFile(req *proto.DownloadRequest, stream proto.Gophkeeper_DownloadFileServer) error {
-	fInfo, err := k.dbService.GetFile(stream.Context(), req.Name)
+	v := stream.Context().Value(dto.Id)
+	userId := v.(int64)
+
+	fInfo, err := k.dbService.GetFile(stream.Context(), userId, req.Name)
 	if err != nil {
 		return err
 	}
@@ -107,6 +110,7 @@ func (k *KeeperServer) DownloadFile(req *proto.DownloadRequest, stream proto.Gop
 	if err != nil {
 		return nil
 	}
+	defer k.dbService.SetFileStatus(stream.Context(), fInfo.Id, dto.Available)
 	stream.Send(&proto.DownloadResponse{Data: &proto.DownloadResponse_Info{Info: &proto.FileInfo{Name: fInfo.Name}}})
 	return k.fileService.ReadByChunk(fInfo.Name, func(b []byte) error {
 		return stream.Send(&proto.DownloadResponse{Data: &proto.DownloadResponse_ChunkData{ChunkData: b}})

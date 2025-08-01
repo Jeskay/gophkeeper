@@ -5,6 +5,8 @@ import (
 	proto "gophkeeper/api/protos"
 	menu "gophkeeper/internal/client/menu/control"
 	"gophkeeper/internal/client/upload/abstraction"
+	"path"
+	"strings"
 )
 
 type uploadController struct {
@@ -23,14 +25,16 @@ func NewController(grpcClient proto.GophkeeperClient, menuController menu.Contro
 	}
 }
 
-func (c *uploadController) UploadFile(path string) error {
+func (c *uploadController) UploadFile(filePath string) error {
 	ctx := c.menuController.Authorize(context.Background())
 	stream, err := c.client.StartUpload(ctx)
 	if err != nil {
 		return err
 	}
-	stream.Init("test1", ".txt")
-	err = c.dataReader.ReadByChunk(path, func(data []byte) error {
+	fileName := path.Base(filePath)
+	str := strings.SplitN(fileName, ".", 2)
+	stream.Init(str[0], "."+str[1])
+	err = c.dataReader.ReadByChunk(filePath, func(data []byte) error {
 		return stream.Upload(data)
 	})
 	_, respErr := stream.Close()

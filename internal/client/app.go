@@ -3,6 +3,8 @@ package client
 import (
 	"log"
 	"net"
+	"os"
+	"path"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"google.golang.org/grpc"
@@ -34,12 +36,19 @@ func (a *App) Start() {
 	if err != nil {
 		log.Fatal("could not establish grpc connection", err)
 	}
+
+	saveDir, err := os.UserHomeDir()
+	if err != nil {
+		saveDir = ""
+	}
+	saveDir = path.Join(saveDir, "Downloads")
+
 	grpcClient := pb.NewGophkeeperClient(conn)
 
 	authController := authControl.NewController(grpcClient)
 	menuController := menuControl.NewController(authController)
 	uploadController := uploadControl.NewController(grpcClient, menuController)
-	downloadController := downloadControl.NewController(grpcClient)
+	downloadController := downloadControl.NewController(saveDir, grpcClient, menuController)
 
 	authPresenter := authPresent.NewPresenter(authController)
 	uploadPresenter := uploadPresent.NewPresenter(uploadController)

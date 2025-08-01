@@ -12,10 +12,15 @@ var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
 
-func NewList(columns []table.Column, rows []table.Row) List {
+func NewList(download func(name string) error, loadList func() []string) List {
+	columns := []table.Column{
+		{Title: "Id", Width: 4},
+		{Title: "Title", Width: 10},
+		{Title: "Path", Width: 20},
+		{Title: "Size", Width: 10},
+	}
 	t := table.New(
 		table.WithColumns(columns),
-		table.WithRows(rows),
 		table.WithFocused(true),
 		table.WithHeight(7),
 	)
@@ -29,12 +34,14 @@ func NewList(columns []table.Column, rows []table.Row) List {
 		Foreground(lipgloss.Color("170")).
 		Bold(false)
 	t.SetStyles(s)
-	return List{table: t}
+	return List{table: t, downloadFunc: download, loadListFunc: loadList}
 }
 
 type List struct {
-	table       table.Model
-	parentModel tea.Model
+	table        table.Model
+	parentModel  tea.Model
+	downloadFunc func(string) error //TODO: make error handling for those functions
+	loadListFunc func() []string
 }
 
 func (l List) Init() tea.Cmd { return nil }
@@ -44,6 +51,8 @@ func (l List) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "ctrl+r":
+			l.updateRows()
 		case "esc":
 			if l.table.Focused() {
 				l.table.Blur()
@@ -54,12 +63,16 @@ func (l List) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			parent, cmd := l.parentModel.Update(nil)
 			return parent, cmd
 		case "enter":
-			return l, tea.Batch(
+			l.downloadFunc(l.table.SelectedRow()[1])
+			parent, cmd := l.parentModel.Update(nil)
+			return parent, tea.Batch(
 				tea.Printf("Selected %s to download", l.table.SelectedRow()[1]),
+				cmd,
 			)
 		}
 	case tui.SpawnMsg:
 		l.parentModel = msg.Parent
+		l.updateRows()
 		return l, tea.ClearScreen
 	}
 	l.table, cmd = l.table.Update(msg)
@@ -68,4 +81,13 @@ func (l List) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (l List) View() string {
 	return baseStyle.Render(l.table.View()) + "\n"
+}
+
+func (l *List) updateRows() {
+	fNames := l.loadListFunc()
+	rows := make([]table.Row, len(fNames))
+	for i, n := range fNames {
+		rows[i] = table.Row{"1", n, "cloud", "1Mb"}
+	}
+	l.table.SetRows(rows)
 }

@@ -1,10 +1,10 @@
 package control
 
 import (
-	"context"
 	"gophkeeper/internal/client/download/abstraction"
 )
 
 type Controller interface {
-	DownloadFiles(ctx context.Context) ([]abstraction.FileData, error)
+	DownloadFile(fileName string) error
+	DownloadFileList() ([]*abstraction.FileData, error)
 }

@@ -7,17 +7,17 @@ type FileData struct {
 }
 
 type downloadRepository struct {
-	files []FileData
+	files []*FileData
 }
 
 func NewRepository() *downloadRepository {
 	return &downloadRepository{}
 }
 
-func (r *downloadRepository) SetFiles(value []FileData) {
+func (r *downloadRepository) SetFiles(value []*FileData) {
 	r.files = value
 }
 
-func (r *downloadRepository) GetFiles() []FileData {
+func (r *downloadRepository) GetFiles() []*FileData {
 	return r.files
 }

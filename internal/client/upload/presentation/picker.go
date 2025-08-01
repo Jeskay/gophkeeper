@@ -12,7 +12,7 @@ import (
 
 func NewFilePicker(dir string, onComplete func(file string) error) *FilePicker {
 	fp := filepicker.New()
-	fp.AllowedTypes = []string{".mod", ".sum", ".go", ".txt", ".md"}
+	fp.AllowedTypes = []string{".md", ".txt", ".dat"}
 	fp.CurrentDirectory = dir
 	return &FilePicker{filePicker: fp, onComplete: onComplete}
 }
