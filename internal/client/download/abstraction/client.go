@@ -40,9 +40,9 @@ func (c *downloadClient) GetFiles(ctx context.Context) ([]*FileData, error) {
 	return fd, nil
 }
 
-func (c *downloadClient) StartDownload(ctx context.Context, fileName string) (DownloadStream, error) {
+func (c *downloadClient) StartDownload(ctx context.Context, id int64) (DownloadStream, error) {
 	req := &proto.DownloadRequest{
-		Name: fileName,
+		Id: id,
 	}
 	return NewStream(ctx, c.grpcClient, req)
 }

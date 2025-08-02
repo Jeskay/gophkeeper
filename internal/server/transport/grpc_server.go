@@ -115,7 +115,7 @@ func (k *KeeperServer) DownloadFile(req *proto.DownloadRequest, stream proto.Gop
 	v := stream.Context().Value(dto.Id)
 	userId := v.(int64)
 
-	fInfo, err := k.dbService.GetFile(stream.Context(), userId, req.Name)
+	fInfo, err := k.dbService.GetFile(stream.Context(), userId, req.Id)
 	if err != nil {
 		return err
 	}

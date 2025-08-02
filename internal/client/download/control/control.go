@@ -5,6 +5,6 @@ import (
 )
 
 type Controller interface {
-	DownloadFile(fileName string) error
+	DownloadFile(id int64) error
 	DownloadFileList() ([]*abstraction.FileData, error)
 }

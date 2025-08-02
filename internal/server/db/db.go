@@ -81,7 +81,7 @@ func (s *databaseService) CreateUser(ctx context.Context, user dto.User) error {
 	return nil
 }
 
-func (s *databaseService) GetFile(ctx context.Context, userId int64, name string) (dto.File, error) {
+func (s *databaseService) GetFile(ctx context.Context, userId int64, fileId int64) (dto.File, error) {
 	var (
 		fId     int64
 		fName   string
@@ -93,7 +93,7 @@ func (s *databaseService) GetFile(ctx context.Context, userId int64, name string
 		"file_status",
 	).From(
 		"files",
-	).Where(sq.And{sq.Eq{"file_name": name}, sq.Eq{"owner_id": userId}})
+	).Where(sq.And{sq.Eq{"id": fileId}, sq.Eq{"owner_id": userId}})
 	row := query.QueryRowContext(ctx)
 	if err := row.Scan(&fId, &fName, &fStatus); err != nil {
 		return dto.File{}, err

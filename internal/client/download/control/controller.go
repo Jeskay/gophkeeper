@@ -36,13 +36,13 @@ func (c *downloadController) DownloadFileList() ([]*abstraction.FileData, error)
 }
 
 // TODO: make download by file ID
-func (c *downloadController) DownloadFile(fileName string) error {
+func (c *downloadController) DownloadFile(id int64) error {
 	ctx := c.menuController.Authorize(context.Background())
-	stream, err := c.client.StartDownload(ctx, fileName)
+	stream, err := c.client.StartDownload(ctx, id)
 	if err != nil {
 		return err
 	}
-	_, err = stream.Init()
+	fileName, err := stream.Init()
 	if err != nil {
 		return err
 	}

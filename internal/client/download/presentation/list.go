@@ -17,7 +17,7 @@ var baseStyle = lipgloss.NewStyle().
 
 var errorStyle = baseStyle.Foreground(lipgloss.Color("161"))
 
-func NewList(download func(name string) error, loadList func() ([]fileInfo, error)) List {
+func NewList(download func(id int64) error, loadList func() ([]fileInfo, error)) List {
 	columns := []table.Column{
 		{Title: "Id", Width: 4},
 		{Title: "Title", Width: 10},
@@ -45,7 +45,7 @@ func NewList(download func(name string) error, loadList func() ([]fileInfo, erro
 type List struct {
 	table        table.Model
 	parentModel  tea.Model
-	downloadFunc func(string) error
+	downloadFunc func(int64) error
 	loadListFunc func() ([]fileInfo, error)
 	err          error
 }
@@ -77,7 +77,12 @@ func (l List) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			parent, cmd := l.parentModel.Update(nil)
 			return parent, cmd
 		case "enter":
-			l.err = l.downloadFunc(l.table.SelectedRow()[1])
+			selectedId, err := strconv.ParseInt(l.table.SelectedRow()[0], 10, 64)
+			if err != nil {
+				l.err = err
+				return l, clearErrorAfter(5 * time.Second)
+			}
+			l.err = l.downloadFunc(selectedId)
 			if l.err != nil {
 				return l, clearErrorAfter(5 * time.Second)
 			}

@@ -13,7 +13,7 @@ type DataWriter interface {
 
 type Client interface {
 	GetFiles(ctx context.Context) ([]*FileData, error)
-	StartDownload(ctx context.Context, fileName string) (DownloadStream, error)
+	StartDownload(ctx context.Context, id int64) (DownloadStream, error)
 }
 
 type DownloadStream interface {

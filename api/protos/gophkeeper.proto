@@ -56,7 +56,7 @@ enum FileStatus {
   RESTRICTED = 2;
 }
 
-message DownloadRequest { string name = 1; }
+message DownloadRequest { int64 id = 1; }
 
 message DownloadResponse {
   oneof data {
