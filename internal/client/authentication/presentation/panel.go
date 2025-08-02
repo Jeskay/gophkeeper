@@ -13,11 +13,15 @@ import (
 )
 
 var (
-	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	cursorStyle         = focusedStyle
-	noStyle             = lipgloss.NewStyle()
-	helpStyle           = blurredStyle
+	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	cursorStyle  = focusedStyle
+	noStyle      = lipgloss.NewStyle()
+	helpStyle    = blurredStyle
+	errorStyle   = lipgloss.NewStyle().
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("240")).
+			Foreground(lipgloss.Color("161"))
 	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
 
 	focusedButton = focusedStyle.Render("[ Submit ]")
@@ -102,7 +106,7 @@ func (p Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				err := p.onComplete(p.inputs[0].Value(), p.inputs[1].Value())
 				if err != nil {
 					p.err = err
-					return p, tea.ClearScreen
+					return p, clearErrorAfter(5 * time.Second)
 				}
 				return p.parentModel.Update(tui.AuthMsg{})
 			}
@@ -152,6 +156,10 @@ func (p Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (p Panel) View() string {
 	var b strings.Builder
 
+	if p.err != nil {
+		b.WriteString(errorStyle.Render(p.err.Error()) + "\n\n")
+	}
+
 	for i := range p.inputs {
 		b.WriteString(p.inputs[i].View())
 		if i < len(p.inputs)-1 {
@@ -164,10 +172,6 @@ func (p Panel) View() string {
 		button = &focusedButton
 	}
 	fmt.Fprintf(&b, "\n\n%s\n\n", *button)
-
-	if p.err != nil {
-		b.WriteString(helpStyle.Render(p.err.Error()))
-	}
 
 	b.WriteString(helpStyle.Render("cursor mode is "))
 	b.WriteString(cursorModeHelpStyle.Render(p.cursorMode.String()))

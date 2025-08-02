@@ -3,6 +3,8 @@ package presentation
 import (
 	"gophkeeper/internal/client/tui"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,6 +14,8 @@ import (
 var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
+
+var errorStyle = baseStyle.Foreground(lipgloss.Color("161"))
 
 func NewList(download func(name string) error, loadList func() ([]fileInfo, error)) List {
 	columns := []table.Column{
@@ -41,8 +45,17 @@ func NewList(download func(name string) error, loadList func() ([]fileInfo, erro
 type List struct {
 	table        table.Model
 	parentModel  tea.Model
-	downloadFunc func(string) error //TODO: make error handling for those functions
+	downloadFunc func(string) error
 	loadListFunc func() ([]fileInfo, error)
+	err          error
+}
+
+type clearErrorMsg struct{}
+
+func clearErrorAfter(t time.Duration) tea.Cmd {
+	return tea.Tick(t, func(_ time.Time) tea.Msg {
+		return clearErrorMsg{}
+	})
 }
 
 func (l List) Init() tea.Cmd { return nil }
@@ -64,30 +77,43 @@ func (l List) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			parent, cmd := l.parentModel.Update(nil)
 			return parent, cmd
 		case "enter":
-			l.downloadFunc(l.table.SelectedRow()[1])
+			l.err = l.downloadFunc(l.table.SelectedRow()[1])
+			if l.err != nil {
+				return l, clearErrorAfter(5 * time.Second)
+			}
 			parent, cmd := l.parentModel.Update(nil)
-			return parent, tea.Batch(
-				tea.Printf("Selected %s to download", l.table.SelectedRow()[1]),
+			return parent, tea.Sequence(
+				tea.Printf("File %s saved to downloads folder", l.table.SelectedRow()[1]),
 				cmd,
 			)
 		}
 	case tui.SpawnMsg:
 		l.parentModel = msg.Parent
-		l.updateRows()
+		l.err = l.updateRows()
+		if l.err != nil {
+			return l, clearErrorAfter(5 * time.Second)
+		}
 		return l, tea.ClearScreen
+	case clearErrorMsg:
+		l.err = nil
 	}
 	l.table, cmd = l.table.Update(msg)
 	return l, cmd
 }
 
 func (l List) View() string {
-	return baseStyle.Render(l.table.View()) + "\n"
+	var s strings.Builder
+	if l.err != nil {
+		s.WriteString(errorStyle.Render(l.err.Error()))
+	}
+	s.WriteString(baseStyle.Render("\n\n"+l.table.View()) + "\n")
+	return s.String()
 }
 
-func (l *List) updateRows() {
+func (l *List) updateRows() error {
 	fInfos, err := l.loadListFunc()
 	if err != nil {
-		return
+		return err
 	}
 	rows := make([]table.Row, len(fInfos))
 	for i, n := range fInfos {
@@ -95,4 +121,5 @@ func (l *List) updateRows() {
 		rows[i] = table.Row{id, n.Name, n.Size + "B", n.Status}
 	}
 	l.table.SetRows(rows)
+	return nil
 }

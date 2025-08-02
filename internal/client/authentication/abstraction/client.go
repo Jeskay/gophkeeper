@@ -2,6 +2,7 @@ package abstraction
 
 import (
 	"context"
+	"errors"
 	proto "gophkeeper/api/protos"
 )
 
@@ -25,6 +26,9 @@ func (c *authClient) Authenticate(ctx context.Context, name, password string) (s
 	res, err := c.grpcClient.Login(ctx, &proto.LoginRequest{Name: name, Password: password})
 	if err != nil {
 		return "", err
+	}
+	if res.Status != 202 {
+		return "", errors.New("incorrect login/password pair")
 	}
 	return res.Token, nil
 }
