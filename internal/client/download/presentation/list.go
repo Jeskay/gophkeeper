@@ -1,11 +1,12 @@
 package presentation
 
 import (
+	"fmt"
 	"gophkeeper/internal/client/tui"
-	"strconv"
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -39,26 +40,29 @@ func NewList(download func(id int64) error, loadList func() ([]fileInfo, error))
 		Foreground(lipgloss.Color("170")).
 		Bold(false)
 	t.SetStyles(s)
-	return List{table: t, downloadFunc: download, loadListFunc: loadList}
+	lSpinner := spinner.New(
+		spinner.WithSpinner(spinner.Dot),
+		spinner.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("170"))),
+	)
+	return List{
+		table:        t,
+		downloadFunc: download,
+		loadListFunc: loadList,
+		spinner:      lSpinner,
+	}
 }
 
 type List struct {
 	table        table.Model
+	spinner      spinner.Model
 	parentModel  tea.Model
 	downloadFunc func(int64) error
 	loadListFunc func() ([]fileInfo, error)
 	err          error
+	loading      bool
 }
 
-type clearErrorMsg struct{}
-
-func clearErrorAfter(t time.Duration) tea.Cmd {
-	return tea.Tick(t, func(_ time.Time) tea.Msg {
-		return clearErrorMsg{}
-	})
-}
-
-func (l List) Init() tea.Cmd { return nil }
+func (l List) Init() tea.Cmd { return l.spinner.Tick }
 
 func (l List) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
@@ -66,7 +70,7 @@ func (l List) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+r":
-			l.updateRows()
+			return l, fetchFiles(l.loadListFunc)
 		case "esc":
 			if l.table.Focused() {
 				l.table.Blur()
@@ -77,33 +81,31 @@ func (l List) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			parent, cmd := l.parentModel.Update(nil)
 			return parent, cmd
 		case "enter":
-			selectedId, err := strconv.ParseInt(l.table.SelectedRow()[0], 10, 64)
-			if err != nil {
-				l.err = err
-				return l, clearErrorAfter(5 * time.Second)
-			}
-			l.err = l.downloadFunc(selectedId)
-			if l.err != nil {
-				return l, clearErrorAfter(5 * time.Second)
-			}
-			parent, cmd := l.parentModel.Update(nil)
-			return parent, tea.Sequence(
-				tea.Printf("File %s saved to downloads folder", l.table.SelectedRow()[1]),
-				cmd,
-			)
+			return l, downloadFile(l.downloadFunc, l.table.SelectedRow())
 		}
 	case tui.SpawnMsg:
 		l.parentModel = msg.Parent
-		l.err = l.updateRows()
-		if l.err != nil {
-			return l, clearErrorAfter(5 * time.Second)
-		}
-		return l, tea.ClearScreen
-	case clearErrorMsg:
+		return l, tea.Sequence(l.spinner.Tick, fetchFiles(l.loadListFunc))
+	case tui.ErrorMsg:
+		l.err = msg.Err
+		return l, tui.ClearErrorAfter(5 * time.Second)
+	case tui.ClearErrorMsg:
 		l.err = nil
+	case tui.LoadMsg:
+		l.loading = msg.InProcess
+	case fetchedFiles:
+		l.table.SetRows(msg.rows)
+	case successMsg:
+		parent, cmd := back(l.parentModel)
+		return parent, tea.Sequence(
+			tea.Printf("File %s saved to downloads folder", msg.fileName),
+			cmd,
+		)
 	}
+	var cmdSpin tea.Cmd
+	l.spinner, cmdSpin = l.spinner.Update(msg)
 	l.table, cmd = l.table.Update(msg)
-	return l, cmd
+	return l, tea.Batch(cmd, cmdSpin)
 }
 
 func (l List) View() string {
@@ -112,19 +114,8 @@ func (l List) View() string {
 		s.WriteString(errorStyle.Render(l.err.Error()))
 	}
 	s.WriteString(baseStyle.Render("\n\n"+l.table.View()) + "\n")
+	if l.loading {
+		s.WriteString(fmt.Sprintf("\n\n %s Downloading file...", l.spinner.View()))
+	}
 	return s.String()
-}
-
-func (l *List) updateRows() error {
-	fInfos, err := l.loadListFunc()
-	if err != nil {
-		return err
-	}
-	rows := make([]table.Row, len(fInfos))
-	for i, n := range fInfos {
-		id := strconv.FormatInt(n.Id, 10)
-		rows[i] = table.Row{id, n.Name, n.Size + "B", n.Status}
-	}
-	l.table.SetRows(rows)
-	return nil
 }

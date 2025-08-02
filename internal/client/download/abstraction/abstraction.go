@@ -19,5 +19,4 @@ type Client interface {
 type DownloadStream interface {
 	Init() (string, error)
 	Receive() ([]byte, error)
-	Close() error //TODO: delete since unnecessary when reading stream
 }

@@ -63,7 +63,3 @@ func (s *downloadStream) Receive() ([]byte, error) {
 	}
 	return res.GetChunkData(), nil
 }
-
-func (s *downloadStream) Close() error {
-	return s.stream.CloseSend()
-}
