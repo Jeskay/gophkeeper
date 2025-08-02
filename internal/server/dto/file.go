@@ -11,9 +11,9 @@ type File struct {
 	Size   int
 }
 
-func (fs FileStatus) Proto() proto.FileInfo_Status {
+func (fs *FileStatus) Proto() proto.FileInfo_Status {
 	var status proto.FileStatus
-	switch fs {
+	switch *fs {
 	case Available:
 		status = proto.FileStatus_AVAILABLE
 	case Reserved:

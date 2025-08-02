@@ -9,7 +9,6 @@ import (
 	"math"
 	"os"
 	"path"
-	"strings"
 )
 
 type uploadController struct {
@@ -35,7 +34,7 @@ func (c *uploadController) UploadFile(filePath string) error {
 		return err
 	}
 	fileName := path.Base(filePath)
-	str := strings.SplitN(fileName, ".", 2)
+	fileExt := path.Ext(filePath)
 	info, err := os.Stat(filePath)
 	if err != nil {
 		return err
@@ -43,7 +42,7 @@ func (c *uploadController) UploadFile(filePath string) error {
 	if info.Size() > math.MaxUint32 {
 		return errors.New("file is too large")
 	}
-	stream.Init(str[0], "."+str[1], uint32(info.Size()))
+	stream.Init(fileName, fileExt, uint32(info.Size()))
 	err = c.dataReader.ReadByChunk(filePath, func(data []byte) error {
 		return stream.Upload(data)
 	})
