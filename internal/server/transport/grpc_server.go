@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	proto "gophkeeper/api/protos"
 	"gophkeeper/internal/server/auth"
 	"gophkeeper/internal/server/db"
@@ -118,6 +119,9 @@ func (k *KeeperServer) DownloadFile(req *proto.DownloadRequest, stream proto.Gop
 	fInfo, err := k.dbService.GetFile(stream.Context(), userId, req.Id)
 	if err != nil {
 		return err
+	}
+	if fInfo.Status != dto.Available {
+		return fmt.Errorf("access restricted due to %s status of the file", fInfo.Status)
 	}
 	err = k.dbService.SetFileStatus(stream.Context(), fInfo.Id, dto.Reserved)
 	if err != nil {
