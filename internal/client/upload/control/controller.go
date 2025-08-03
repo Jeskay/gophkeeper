@@ -3,27 +3,40 @@ package control
 import (
 	"context"
 	"errors"
-	proto "gophkeeper/api/protos"
-	menu "gophkeeper/internal/client/menu/control"
-	"gophkeeper/internal/client/upload/abstraction"
+	"fmt"
+	"io"
 	"math"
 	"os"
 	"path"
+	"strings"
+
+	proto "gophkeeper/api/protos"
+	menu "gophkeeper/internal/client/menu/control"
+	"gophkeeper/internal/client/upload/abstraction"
+	"gophkeeper/pkg/cipher"
+	"gophkeeper/pkg/file"
 )
 
 type uploadController struct {
 	menuController menu.Controller
 	client         abstraction.Client
 	repository     abstraction.Repository
-	dataReader     abstraction.DataReader
+	fileReader     file.FileReader
+	fileWriter     file.FileWriter
+	uploadCipher   cipher.Cipher
 }
 
-func NewController(grpcClient proto.GophkeeperClient, menuController menu.Controller) *uploadController {
+const encryptedSuffix = ".tmp"
+
+func NewController(grpcClient proto.GophkeeperClient, uploadCipher cipher.Cipher, menuController menu.Controller) *uploadController {
+
 	return &uploadController{
 		menuController: menuController,
 		client:         NewClient(grpcClient),
 		repository:     abstraction.NewRepository(),
-		dataReader:     NewDataReader(),
+		fileReader:     file.NewFileReader(),
+		uploadCipher:   uploadCipher,
+		fileWriter:     file.NewFileWriter(),
 	}
 }
 
@@ -42,13 +55,53 @@ func (c *uploadController) UploadFile(filePath string) error {
 	if info.Size() > math.MaxUint32 {
 		return errors.New("file is too large")
 	}
-	stream.Init(fileName, fileExt, uint32(info.Size()))
-	err = c.dataReader.ReadByChunk(filePath, func(data []byte) error {
-		return stream.Upload(data)
-	})
-	_, respErr := stream.Close()
-	if err == nil {
-		return respErr
+	stream.Init(strings.TrimSuffix(fileName, fileExt), fileExt, uint32(info.Size()))
+	encrypted, err := c.encryptToFile(filePath)
+	if err != nil {
+		return err
 	}
+	f, err := c.fileReader.OpenFile(encrypted)
+	if err != nil {
+		return err
+	}
+	reader := c.fileReader.NewBufferedReader(f)
+	for {
+		b, err := c.fileReader.BufferedRead(reader)
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+		err = stream.Upload(b)
+		if err != nil {
+			return err
+		}
+	}
+	//defer os.Remove(encrypted)
+	_, err = stream.Close()
 	return err
+}
+
+func (c *uploadController) encryptToFile(fileName string) (out string, err error) {
+	data, err := os.ReadFile(fileName)
+	if err != nil {
+		return
+	}
+	var ciphered []byte
+	ciphered, err = c.uploadCipher.Encrypt(data)
+	if err != nil {
+		return
+	}
+	out = fmt.Sprint(fileName, encryptedSuffix)
+	var cFile *os.File
+	cFile, err = c.fileWriter.CreateFile(out)
+	if err != nil {
+		return
+	}
+	defer cFile.Close()
+	_, err = c.fileWriter.FileWrite(cFile, ciphered)
+	if err != nil {
+		return "", err
+	}
+	return
 }

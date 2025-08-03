@@ -23,6 +23,7 @@ import (
 	menuPresent "gophkeeper/internal/client/menu/presentation"
 	uploadControl "gophkeeper/internal/client/upload/control"
 	uploadPresent "gophkeeper/internal/client/upload/presentation"
+	"gophkeeper/pkg/cipher"
 )
 
 var cfg *config.ClientConfig
@@ -36,11 +37,15 @@ func main() {
 	defer conn.Close()
 
 	grpcClient := pb.NewGophkeeperClient(conn)
+	aesCipher, err := cipher.NewAESCipher([]byte(cfg.CipherKey))
+	if err != nil {
+		log.Fatal("invalid cipher key")
+	}
 
 	authController := authControl.NewController(grpcClient)
 	menuController := menuControl.NewController(authController)
-	uploadController := uploadControl.NewController(grpcClient, menuController)
-	downloadController := downloadControl.NewController(cfg.DownloadDirectory, grpcClient, menuController)
+	uploadController := uploadControl.NewController(grpcClient, aesCipher, menuController)
+	downloadController := downloadControl.NewController(cfg.DownloadDirectory, grpcClient, aesCipher, menuController)
 
 	authPresenter := authPresent.NewPresenter(authController)
 	uploadPresenter := uploadPresent.NewPresenter(uploadController)
@@ -74,6 +79,7 @@ func loadParams() *config.ClientConfig {
 	var cfg = &config.ClientConfig{}
 	flag.StringVar(&cfg.GRPCAddress.Host, "host", "localhost", "grpc server hostname")
 	flag.StringVar(&cfg.GRPCAddress.Port, "port", "8080", "grpc server port")
+	flag.StringVar(&cfg.CipherKey, "crypto", "N1PCdw3M2B1TfJhoaY2mL736p2vCUc47", "secret for file encryption algorithm")
 	flag.Parse()
 	return cfg
 }

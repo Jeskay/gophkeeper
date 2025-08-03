@@ -10,6 +10,7 @@ type ServerConfig struct {
 
 type ClientConfig struct {
 	GRPCAddress       Address
+	CipherKey         string `env:"Cipher_KEY"`
 	DownloadDirectory string
 }
 type Address struct {

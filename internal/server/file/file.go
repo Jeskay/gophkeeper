@@ -2,6 +2,7 @@ package file
 
 import (
 	fPkg "gophkeeper/pkg/file"
+	"io"
 	"os"
 	"path"
 )
@@ -63,11 +64,15 @@ func (s *fileService) ReadByChunk(name string, f func([]byte) error) error {
 	}
 	defer file.Close()
 
-	scanner := s.fileReader.NewBufferedScanner(file)
-	for scanner.Scan() {
-		if err := f(scanner.Bytes()); err != nil {
+	reader := s.fileReader.NewBufferedReader(file)
+	for {
+		b, err := s.fileReader.BufferedRead(reader)
+		if err == io.EOF {
+			break
+		} else if err != nil {
 			return err
 		}
+		f(b)
 	}
 	return nil
 }

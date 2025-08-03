@@ -6,6 +6,7 @@ import (
 	proto "gophkeeper/api/protos"
 	"gophkeeper/internal/client/download/abstraction"
 	menu "gophkeeper/internal/client/menu/control"
+	"gophkeeper/pkg/cipher"
 	"io"
 )
 
@@ -14,14 +15,16 @@ type downloadController struct {
 	client         abstraction.Client
 	repository     abstraction.Repository
 	dataWriter     abstraction.DataWriter
+	downloadCipher cipher.Cipher
 }
 
-func NewController(saveDir string, grpcClient proto.GophkeeperClient, menuController menu.Controller) *downloadController {
+func NewController(saveDir string, grpcClient proto.GophkeeperClient, downloadCipher cipher.Cipher, menuController menu.Controller) *downloadController {
 	return &downloadController{
 		client:         NewClient(grpcClient),
 		repository:     abstraction.NewRepository(),
 		menuController: menuController,
 		dataWriter:     NewDataWriter(saveDir),
+		downloadCipher: downloadCipher,
 	}
 }
 
@@ -59,5 +62,13 @@ func (c *downloadController) DownloadFile(id int64) error {
 			return err
 		}
 	}
-	return c.dataWriter.WriteFile(fileName, data.Bytes())
+	return c.decryptToFile(data.Bytes(), fileName)
+}
+
+func (c *downloadController) decryptToFile(data []byte, out string) (err error) {
+	deciphered, err := c.downloadCipher.Decrypt(data)
+	if err != nil {
+		return
+	}
+	return c.dataWriter.WriteFile(out, deciphered)
 }
