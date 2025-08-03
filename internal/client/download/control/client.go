@@ -1,8 +1,9 @@
-package abstraction
+package control
 
 import (
 	"context"
 	proto "gophkeeper/api/protos"
+	"gophkeeper/internal/client/download/abstraction"
 	"strconv"
 )
 
@@ -26,21 +27,21 @@ func NewStream(ctx context.Context, grpcClient proto.GophkeeperClient, req *prot
 	return &downloadStream{stream: ss}, nil
 }
 
-func (c *downloadClient) GetFiles(ctx context.Context) ([]*FileData, error) {
+func (c *downloadClient) GetFiles(ctx context.Context) ([]*abstraction.FileData, error) {
 	res, err := c.grpcClient.GetFiles(ctx, &proto.GetRequest{})
 	if err != nil {
 		return nil, err
 	}
-	fd := make([]*FileData, len(res.Files))
+	fd := make([]*abstraction.FileData, len(res.Files))
 	for i, f := range res.Files {
 		size := strconv.FormatUint(uint64(f.GetSize()), 10)
 		status := f.GetStatus().String()
-		fd[i] = &FileData{Name: f.Name + f.FileType, Id: f.GetId(), Size: size, Status: status}
+		fd[i] = &abstraction.FileData{Name: f.Name + f.FileType, Id: f.GetId(), Size: size, Status: status}
 	}
 	return fd, nil
 }
 
-func (c *downloadClient) StartDownload(ctx context.Context, id int64) (DownloadStream, error) {
+func (c *downloadClient) StartDownload(ctx context.Context, id int64) (abstraction.DownloadStream, error) {
 	req := &proto.DownloadRequest{
 		Id: id,
 	}

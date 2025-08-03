@@ -1,4 +1,4 @@
-package abstraction
+package control
 
 import (
 	"gophkeeper/pkg/file"

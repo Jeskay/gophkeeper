@@ -21,9 +21,9 @@ type uploadController struct {
 func NewController(grpcClient proto.GophkeeperClient, menuController menu.Controller) *uploadController {
 	return &uploadController{
 		menuController: menuController,
-		client:         abstraction.NewClient(grpcClient),
+		client:         NewClient(grpcClient),
 		repository:     abstraction.NewRepository(),
-		dataReader:     abstraction.NewDataReader(),
+		dataReader:     NewDataReader(),
 	}
 }
 

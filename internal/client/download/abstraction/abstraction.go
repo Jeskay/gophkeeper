@@ -2,6 +2,12 @@ package abstraction
 
 import "context"
 
+type FileData struct {
+	Id     int64
+	Name   string
+	Size   string
+	Status string
+}
 type Repository interface {
 	SetFiles(value []*FileData)
 	GetFiles() []*FileData

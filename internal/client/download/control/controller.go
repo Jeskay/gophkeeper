@@ -18,10 +18,10 @@ type downloadController struct {
 
 func NewController(saveDir string, grpcClient proto.GophkeeperClient, menuController menu.Controller) *downloadController {
 	return &downloadController{
-		client:         abstraction.NewClient(grpcClient),
+		client:         NewClient(grpcClient),
 		repository:     abstraction.NewRepository(),
 		menuController: menuController,
-		dataWriter:     abstraction.NewDataWriter(saveDir),
+		dataWriter:     NewDataWriter(saveDir),
 	}
 }
 
