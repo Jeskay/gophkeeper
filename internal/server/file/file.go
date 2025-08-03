@@ -1,6 +1,7 @@
 package file
 
 import (
+	"gophkeeper/internal/server/dto"
 	fPkg "gophkeeper/pkg/file"
 	"io"
 	"os"
@@ -12,6 +13,8 @@ type fileService struct {
 	fileReader fPkg.FileReader
 	prefix     string
 }
+
+const tmpSuffix = ".tmp"
 
 func NewService(prefix string) *fileService {
 	crntDir, err := os.Getwd()
@@ -52,7 +55,36 @@ func (s *fileService) ReadFile(name string) ([]byte, error) {
 	return data, err
 }
 
-func (s *fileService) ReadByChunk(name string, f func([]byte) error) error {
+func (s *fileService) WriteByChunk(name string, data <-chan dto.ChunkData) (size int, err error) {
+	filePath := path.Join(s.prefix, name)
+	file, err := os.Create(filePath + tmpSuffix)
+	if err != nil {
+		return
+	}
+	defer func() {
+		err = file.Close()
+		if err == nil {
+			err = os.Rename(file.Name(), filePath)
+		}
+	}()
+	writer := s.fileWriter.NewBufferedWriter(file)
+	var n int
+	for chunk := range data {
+		if chunk.Err != nil {
+			err = chunk.Err
+			return
+		}
+		n, err = s.fileWriter.BufferedWrite(writer, chunk.Data)
+		if err != nil {
+			return
+		}
+		size += n
+	}
+	s.fileWriter.BufferedFlush(writer)
+	return
+}
+
+func (s *fileService) ReadByChunk(name string, data chan<- dto.ChunkData) error {
 	filePath := path.Join(s.prefix, name)
 	_, err := os.Stat(filePath)
 	if err != nil {
@@ -66,13 +98,13 @@ func (s *fileService) ReadByChunk(name string, f func([]byte) error) error {
 
 	reader := s.fileReader.NewBufferedReader(file)
 	for {
-		b, err := s.fileReader.BufferedRead(reader)
+		chunk, err := s.fileReader.BufferedRead(reader)
 		if err == io.EOF {
 			break
 		} else if err != nil {
 			return err
 		}
-		f(b)
+		data <- dto.ChunkData{Data: chunk}
 	}
 	return nil
 }

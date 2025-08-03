@@ -23,6 +23,7 @@ type FileWriter interface {
 	FileWrite(file *os.File, b []byte) (n int, err error)
 	FileClose(file *os.File) error
 	NewBufferedWriter(file *os.File) *bufio.Writer
+	BufferedWrite(writer *bufio.Writer, b []byte) (int, error)
 	BufferedWriteString(writer *bufio.Writer, s string) (n int, err error)
 	BufferedFlush(writer *bufio.Writer) error
 }

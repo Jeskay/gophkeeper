@@ -40,6 +40,10 @@ func (r *fileWriter) BufferedWriteString(writer *bufio.Writer, s string) (n int,
 	return writer.WriteString(s)
 }
 
+func (r *fileWriter) BufferedWrite(writer *bufio.Writer, b []byte) (int, error) {
+	return writer.Write(b)
+}
+
 func (r *fileWriter) BufferedFlush(writer *bufio.Writer) error {
 	return writer.Flush()
 }
