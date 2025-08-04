@@ -5,59 +5,62 @@ package gophkeeper;
 option go_package = './gophkeeper';
 
 service gophkeeper {
-    rpc Login (LoginRequest) returns (LoginResponse) {}
-    rpc Register (RegisterRequest) returns (RegisterResponse) {}
-    rpc SaveFile (stream SaveRequest) returns (SaveResponse) {}
-    rpc GetFiles (GetRequest) returns (GetResponse) {}
-    rpc DownloadFile (DownloadRequest) returns ( stream DownloadResponse) {}
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+  rpc Register(RegisterRequest) returns (RegisterResponse) {}
+  rpc SaveFile(stream SaveRequest) returns (SaveResponse) {}
+  rpc GetFiles(GetRequest) returns (GetResponse) {}
+  rpc DownloadFile(DownloadRequest) returns (stream DownloadResponse) {}
 }
 
 message LoginRequest {
-    string name = 1;
-    string password = 2;
+  string name = 1;
+  string password = 2;
 }
 
 message LoginResponse {
-    int64 status = 1;
-    string token = 2;
+  int64 status = 1;
+  string token = 2;
 }
 
 message RegisterRequest {
-    string name = 1;
-    string password = 2;
+  string name = 1;
+  string password = 2;
 }
 
 message RegisterResponse {}
 
 message GetRequest {}
 
-message GetResponse {
-    repeated string files = 1;
-}
+message GetResponse { repeated FileInfo files = 1; }
 
 message SaveRequest {
-    oneof data {
-        FileInfo info = 1;
-        bytes chunk_data = 2;
-    }
+  oneof data {
+    FileInfo info = 1;
+    bytes chunk_data = 2;
+  }
 }
 
-message SaveResponse {
-    uint32 size = 1;
+message SaveResponse { uint32 size = 1; }
+
+message FileInfo {
+  string name = 1;
+  string file_type = 2;
+  uint32 size = 3;
+  oneof optional_status { FileStatus status = 4; }
+  oneof optional_id { int64 id = 5; }
 }
 
-message FileInfo{
-    string name = 1;
-    string file_type = 2;
+enum FileStatus {
+  AVAILABLE = 0;
+  PROCESSING = 1;
+  RESTRICTED = 2;
 }
 
-message DownloadRequest {
-    string name = 1;
-}
+message DownloadRequest { string name = 1; }
 
 message DownloadResponse {
-    oneof data {
-        FileInfo info = 1;
-        bytes chunk_data = 2;
-    }
+  oneof data {
+    FileInfo info = 1;
+    bytes chunk_data = 2;
+  }
 }

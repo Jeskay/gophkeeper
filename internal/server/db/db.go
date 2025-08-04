@@ -55,7 +55,7 @@ func (s *databaseService) GetUser(ctx context.Context, name string) (dto.User, e
 	if err := row.Scan(&userId, &userLogin, &userPassword); err != nil {
 		return dto.User{}, err
 	}
-	return dto.User{Name: userLogin, Password: userPassword}, nil
+	return dto.User{Id: userId, Name: userLogin, Password: userPassword}, nil
 }
 
 func (s *databaseService) CreateUser(ctx context.Context, user dto.User) error {
@@ -81,7 +81,7 @@ func (s *databaseService) CreateUser(ctx context.Context, user dto.User) error {
 	return nil
 }
 
-func (s *databaseService) GetFile(ctx context.Context, name string) (dto.File, error) {
+func (s *databaseService) GetFile(ctx context.Context, userId int64, name string) (dto.File, error) {
 	var (
 		fId     int64
 		fName   string
@@ -93,7 +93,7 @@ func (s *databaseService) GetFile(ctx context.Context, name string) (dto.File, e
 		"file_status",
 	).From(
 		"files",
-	).Where(sq.Eq{"file_name": name})
+	).Where(sq.And{sq.Eq{"file_name": name}, sq.Eq{"owner_id": userId}})
 	row := query.QueryRowContext(ctx)
 	if err := row.Scan(&fId, &fName, &fStatus); err != nil {
 		return dto.File{}, err
@@ -116,8 +116,9 @@ func (s *databaseService) GetUserFiles(ctx context.Context, userId int64) ([]dto
 		"id",
 		"file_name",
 		"file_status",
+		"file_size",
 	).From("files").Where(
-		sq.Eq{"ownder_id": userId},
+		sq.Eq{"owner_id": userId},
 	)
 	rows, err := query.QueryContext(ctx)
 	if err != nil {
@@ -129,38 +130,37 @@ func (s *databaseService) GetUserFiles(ctx context.Context, userId int64) ([]dto
 			id      int64
 			fName   string
 			fStatus dto.FileStatus
+			fSize   int
 		)
-		err := rows.Scan(&id, &fName, &fStatus)
+		err := rows.Scan(&id, &fName, &fStatus, &fSize)
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, dto.File{Id: id, Name: fName, Status: fStatus})
+		files = append(files, dto.File{Id: id, Name: fName, Status: fStatus, Size: fSize})
 	}
 	return files, nil
 }
 
 func (s *databaseService) CreateFile(ctx context.Context, file dto.File, userId int64) (int64, error) {
+	var fileId int64
 	query := s.pSQL.Insert(
 		"files",
 	).Columns(
 		"file_name",
 		"file_status",
+		"file_size",
 		"owner_id",
 	).Values(
 		file.Name,
 		file.Status,
+		file.Size,
 		userId,
-	).Suffix("ON CONFLICT (owner_id) DO NOTHING")
-	res, err := query.ExecContext(ctx)
-	if err != nil {
+	).Suffix("RETURNING id")
+	row := query.QueryRowContext(ctx)
+	if err := row.Scan(&fileId); err != nil {
 		return 0, err
 	}
-	if affected, err := res.RowsAffected(); err != nil {
-		return 0, err
-	} else if affected == 0 {
-		return 0, errors.New("file already exists")
-	}
-	return res.LastInsertId()
+	return fileId, nil
 }
 
 func (s *databaseService) init() error {

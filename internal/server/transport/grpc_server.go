@@ -3,6 +3,7 @@ package transport
 import (
 	"bytes"
 	"context"
+	"errors"
 	proto "gophkeeper/api/protos"
 	"gophkeeper/internal/server/auth"
 	"gophkeeper/internal/server/db"
@@ -18,10 +19,11 @@ type KeeperServer struct {
 	proto.UnimplementedGophkeeperServer
 }
 
-func NewGRPCServer(authService auth.Service, fileService file.Service) proto.GophkeeperServer {
+func NewGRPCServer(authService auth.Service, fileService file.Service, dbService db.Service) proto.GophkeeperServer {
 	return &KeeperServer{
 		authService: authService,
 		fileService: fileService,
+		dbService:   dbService,
 	}
 }
 
@@ -42,24 +44,37 @@ func (k *KeeperServer) GetFiles(ctx context.Context, r *proto.GetRequest) (*prot
 	if err != nil {
 		return &proto.GetResponse{}, err
 	}
-	fNames := make([]string, len(files))
+	fInfos := make([]*proto.FileInfo, len(files))
 	for i, f := range files {
-		fNames[i] = f.Name
+		status := f.Status.Proto()
+		id := &proto.FileInfo_Id{Id: f.Id}
+		fInfos[i] = &proto.FileInfo{
+			Name:           f.Name,
+			OptionalStatus: &status,
+			OptionalId:     id,
+			Size:           uint32(f.Size),
+		}
 	}
-	return &proto.GetResponse{Files: fNames}, nil
+	return &proto.GetResponse{Files: fInfos}, nil
 }
 
 func (k *KeeperServer) SaveFile(stream proto.Gophkeeper_SaveFileServer) error {
+	v := stream.Context().Value(dto.Id)
+	userId := v.(int64)
+
 	req, err := stream.Recv()
 	if err != nil {
 		return err
 	}
-	fName := req.GetInfo().GetName()
-	fType := req.GetInfo().GetFileType()
+	fInfo := req.GetInfo()
+	if fInfo == nil {
+		return errors.New("no file info provided")
+	}
+	fName := fInfo.GetName()
+	fType := fInfo.GetFileType()
+	fSize := fInfo.GetSize()
 
-	userId := stream.Context().Value("userId").(int64)
-
-	fId, err := k.dbService.CreateFile(stream.Context(), dto.File{Name: fName, Status: dto.Processing}, userId)
+	fId, err := k.dbService.CreateFile(context.Background(), dto.File{Name: fName + fType, Status: dto.Processing, Size: int(fSize)}, userId)
 	if err != nil {
 		return err
 	}
@@ -82,6 +97,10 @@ func (k *KeeperServer) SaveFile(stream proto.Gophkeeper_SaveFileServer) error {
 			return err
 		}
 	}
+	err = stream.SendAndClose(&proto.SaveResponse{Size: uint32(size)})
+	if err != nil {
+		return err
+	}
 	if err := k.fileService.SaveFile(fName+fType, data.Bytes()); err != nil {
 		return err
 	}
@@ -89,12 +108,14 @@ func (k *KeeperServer) SaveFile(stream proto.Gophkeeper_SaveFileServer) error {
 	if err != nil {
 		return err
 	}
-	stream.SendAndClose(&proto.SaveResponse{Size: uint32(size)})
 	return nil
 }
 
 func (k *KeeperServer) DownloadFile(req *proto.DownloadRequest, stream proto.Gophkeeper_DownloadFileServer) error {
-	fInfo, err := k.dbService.GetFile(stream.Context(), req.Name)
+	v := stream.Context().Value(dto.Id)
+	userId := v.(int64)
+
+	fInfo, err := k.dbService.GetFile(stream.Context(), userId, req.Name)
 	if err != nil {
 		return err
 	}
@@ -102,6 +123,7 @@ func (k *KeeperServer) DownloadFile(req *proto.DownloadRequest, stream proto.Gop
 	if err != nil {
 		return nil
 	}
+	defer k.dbService.SetFileStatus(stream.Context(), fInfo.Id, dto.Available)
 	stream.Send(&proto.DownloadResponse{Data: &proto.DownloadResponse_Info{Info: &proto.FileInfo{Name: fInfo.Name}}})
 	return k.fileService.ReadByChunk(fInfo.Name, func(b []byte) error {
 		return stream.Send(&proto.DownloadResponse{Data: &proto.DownloadResponse_ChunkData{ChunkData: b}})

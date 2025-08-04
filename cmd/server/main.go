@@ -49,16 +49,19 @@ func main() {
 	}
 	var authService auth.Service
 	{
-		authService = auth.NewService(dbService, []byte(cfg.SecretKey), time.Second*5)
+		authService = auth.NewService(dbService, []byte(cfg.SecretKey), time.Hour*5)
 	}
 	fileService := file.NewService("storage")
-	grpcServer := transport.NewGRPCServer(authService, fileService)
+	grpcServer := transport.NewGRPCServer(authService, fileService, dbService)
 
 	grpcListener, err := net.Listen("tcp", grpcAddr)
 	if err != nil {
 		zapL.Fatal("failed to start grpc server", zap.Error(err))
 	}
-	baseServer := grpc.NewServer(grpc.UnaryInterceptor(interceptors.NewAuthUnaryInterceptor(authService)))
+	baseServer := grpc.NewServer(
+		grpc.UnaryInterceptor(interceptors.NewAuthUnaryInterceptor(authService)),
+		grpc.StreamInterceptor(interceptors.NewAuthStreamInterceptor(authService)),
+	)
 	reflection.Register(baseServer)
 	proto.RegisterGophkeeperServer(baseServer, grpcServer)
 

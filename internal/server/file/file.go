@@ -1,15 +1,28 @@
 package file
 
-import "path"
+import (
+	fPkg "gophkeeper/pkg/file"
+	"os"
+	"path"
+)
 
 type fileService struct {
-	fileWriter FileWriter
-	fileReader FileReader
+	fileWriter fPkg.FileWriter
+	fileReader fPkg.FileReader
 	prefix     string
 }
 
 func NewService(prefix string) *fileService {
-	return &fileService{prefix: prefix}
+	crntDir, err := os.Getwd()
+	if err == nil {
+		if _, err := os.Stat(prefix); os.IsNotExist(err) {
+			if err = os.Mkdir(prefix, 0755); err != nil {
+				prefix = crntDir
+			}
+		}
+	}
+
+	return &fileService{prefix: prefix, fileWriter: fPkg.NewFileWriter(), fileReader: fPkg.NewFileReader()}
 }
 
 func (s *fileService) SaveFile(name string, data []byte) error {
@@ -39,7 +52,12 @@ func (s *fileService) ReadFile(name string) ([]byte, error) {
 }
 
 func (s *fileService) ReadByChunk(name string, f func([]byte) error) error {
-	file, err := s.fileReader.OpenFile(path.Join(s.prefix, name))
+	filePath := path.Join(s.prefix, name)
+	_, err := os.Stat(filePath)
+	if err != nil {
+		return err
+	}
+	file, err := s.fileReader.OpenFile(filePath)
 	if err != nil {
 		return err
 	}

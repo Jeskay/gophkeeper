@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS files (
     id INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     file_name TEXT,
     file_status availability,
+    file_size INT,
     owner_id BIGINT REFERENCES users(id)
 );
 -- +goose Down
