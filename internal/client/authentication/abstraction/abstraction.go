@@ -1,8 +1,7 @@
 package abstraction
 
-import "context"
-
-type Client interface {
-	Register(ctx context.Context, name, password string) error
-	Authenticate(ctx context.Context, name, password string) (string, error)
+type Repository interface {
+	GetUser() string
+	GetToken() string
+	Authenticate(login string, token string)
 }

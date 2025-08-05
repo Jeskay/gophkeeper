@@ -22,6 +22,7 @@ import (
 	"gophkeeper/internal/server/auth"
 	"gophkeeper/internal/server/db"
 	"gophkeeper/internal/server/file"
+	"gophkeeper/internal/server/keeper"
 	"gophkeeper/internal/server/transport"
 	"gophkeeper/internal/server/transport/interceptors"
 )
@@ -47,12 +48,11 @@ func main() {
 		zapL.Error("failed to initialize db", zap.Error(err))
 		return
 	}
-	var authService auth.Service
-	{
-		authService = auth.NewService(dbService, []byte(cfg.SecretKey), time.Hour*5)
-	}
 	fileService := file.NewService("storage")
-	grpcServer := transport.NewGRPCServer(authService, fileService, dbService)
+
+	authService := auth.NewService(dbService, []byte(cfg.SecretKey), time.Hour*5)
+	keeperService := keeper.NewKeeperService(dbService, fileService)
+	grpcServer := transport.NewGRPCServer(authService, keeperService)
 
 	grpcListener, err := net.Listen("tcp", grpcAddr)
 	if err != nil {

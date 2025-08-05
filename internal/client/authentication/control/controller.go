@@ -3,18 +3,17 @@ package control
 import (
 	"context"
 	pb "gophkeeper/api/protos"
-	"gophkeeper/internal/client/authentication/abstraction"
 
 	"google.golang.org/grpc/metadata"
 )
 
 type authController struct {
-	client abstraction.Client
+	client *authClient
 }
 
 func NewController(grpcClient pb.GophkeeperClient) *authController {
 	return &authController{
-		client: abstraction.NewClient(grpcClient),
+		client: NewClient(grpcClient),
 	}
 }
 

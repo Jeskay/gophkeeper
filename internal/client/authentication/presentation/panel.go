@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/cursor"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -29,9 +30,14 @@ var (
 )
 
 func NewPanel(onComplete func(login, password string) error) Panel {
+	sp := spinner.New(
+		spinner.WithSpinner(spinner.Dot),
+		spinner.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("170"))),
+	)
 	m := Panel{
 		inputs:     make([]textinput.Model, 2),
 		onComplete: onComplete,
+		spinner:    sp,
 	}
 
 	var t textinput.Model
@@ -59,20 +65,14 @@ func NewPanel(onComplete func(login, password string) error) Panel {
 	return m
 }
 
-type clearErrorMsg struct{}
-
-func clearErrorAfter(t time.Duration) tea.Cmd {
-	return tea.Tick(t, func(_ time.Time) tea.Msg {
-		return clearErrorMsg{}
-	})
-}
-
 type Panel struct {
 	focusIndex  int
 	inputs      []textinput.Model
+	spinner     spinner.Model
 	cursorMode  cursor.Mode
 	onComplete  func(string, string) error
 	parentModel tea.Model
+	loading     bool
 	err         error
 }
 
@@ -103,12 +103,9 @@ func (p Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			s := msg.String()
 
 			if s == "enter" && p.focusIndex == len(p.inputs) {
-				err := p.onComplete(p.inputs[0].Value(), p.inputs[1].Value())
-				if err != nil {
-					p.err = err
-					return p, clearErrorAfter(5 * time.Second)
-				}
-				return p.parentModel.Update(tui.AuthMsg{})
+				login := p.inputs[0].Value()
+				password := p.inputs[1].Value()
+				return p, submit(login, password, p.onComplete)
 			}
 
 			if s == "up" || s == "shift+tab" {
@@ -142,28 +139,37 @@ func (p Panel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tui.SpawnMsg:
 		p.parentModel = msg.Parent
-		return p, tea.ClearScreen
-	case clearErrorMsg:
+		return p, p.spinner.Tick
+	case tui.ClearErrorMsg:
 		p.err = nil
+	case tui.ErrorMsg:
+		p.err = msg.Err
+		return p, tui.ClearErrorAfter(5 * time.Second)
+	case tui.LoadMsg:
+		p.loading = msg.InProcess
+	case successMsg:
+		m, cmd := p.parentModel.Update(tui.AuthMsg{})
+		return m, tea.Batch(tea.Printf("Login: %s", msg.login), cmd)
 	}
 
-	// Handle character input and blinking
+	var cmdSpin tea.Cmd
+	p.spinner, cmdSpin = p.spinner.Update(msg)
 	cmd := p.updateInputs(msg)
 
-	return p, cmd
+	return p, tea.Batch(cmd, cmdSpin)
 }
 
 func (p Panel) View() string {
-	var b strings.Builder
+	var s strings.Builder
 
 	if p.err != nil {
-		b.WriteString(errorStyle.Render(p.err.Error()) + "\n\n")
+		s.WriteString(errorStyle.Render(p.err.Error()) + "\n\n")
 	}
 
 	for i := range p.inputs {
-		b.WriteString(p.inputs[i].View())
+		s.WriteString(p.inputs[i].View())
 		if i < len(p.inputs)-1 {
-			b.WriteRune('\n')
+			s.WriteRune('\n')
 		}
 	}
 
@@ -171,23 +177,15 @@ func (p Panel) View() string {
 	if p.focusIndex == len(p.inputs) {
 		button = &focusedButton
 	}
-	fmt.Fprintf(&b, "\n\n%s\n\n", *button)
+	fmt.Fprintf(&s, "\n\n%s\n\n", *button)
 
-	b.WriteString(helpStyle.Render("cursor mode is "))
-	b.WriteString(cursorModeHelpStyle.Render(p.cursorMode.String()))
-	b.WriteString(helpStyle.Render(" (ctrl+r to change style)"))
-
-	return b.String()
-}
-
-func (p *Panel) updateInputs(msg tea.Msg) tea.Cmd {
-	cmds := make([]tea.Cmd, len(p.inputs))
-
-	// Only text inputs with Focus() set will respond, so it's safe to simply
-	// update all of them here without any further logic.
-	for i := range p.inputs {
-		p.inputs[i], cmds[i] = p.inputs[i].Update(msg)
+	if p.loading {
+		s.WriteString(fmt.Sprintf("\n\n %s Attempting to Log in...", p.spinner.View()))
 	}
 
-	return tea.Batch(cmds...)
+	s.WriteString(helpStyle.Render("cursor mode is "))
+	s.WriteString(cursorModeHelpStyle.Render(p.cursorMode.String()))
+	s.WriteString(helpStyle.Render(" (ctrl+r to change style)"))
+
+	return s.String()
 }

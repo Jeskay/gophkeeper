@@ -1,8 +1,9 @@
-package abstraction
+package control
 
 import (
 	"context"
 	proto "gophkeeper/api/protos"
+	"gophkeeper/internal/client/upload/abstraction"
 )
 
 type uploadClient struct {
@@ -25,7 +26,7 @@ func NewStream(ctx context.Context, grpcClient proto.GophkeeperClient) (*uploadS
 	return &uploadStream{stream: stream}, nil
 }
 
-func (c *uploadClient) StartUpload(ctx context.Context) (UploadStream, error) {
+func (c *uploadClient) StartUpload(ctx context.Context) (abstraction.UploadStream, error) {
 	return NewStream(ctx, c.grpcClient)
 }
 

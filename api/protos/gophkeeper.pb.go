@@ -590,7 +590,7 @@ func (*FileInfo_Id) isFileInfo_OptionalId() {}
 
 type DownloadRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -625,11 +625,11 @@ func (*DownloadRequest) Descriptor() ([]byte, []int) {
 	return file_api_protos_gophkeeper_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *DownloadRequest) GetName() string {
+func (x *DownloadRequest) GetId() int64 {
 	if x != nil {
-		return x.Name
+		return x.Id
 	}
-	return ""
+	return 0
 }
 
 type DownloadResponse struct {
@@ -748,9 +748,9 @@ const file_api_protos_gophkeeper_proto_rawDesc = "" +
 	"\x06status\x18\x04 \x01(\x0e2\x16.gophkeeper.FileStatusH\x00R\x06status\x12\x10\n" +
 	"\x02id\x18\x05 \x01(\x03H\x01R\x02idB\x11\n" +
 	"\x0foptional_statusB\r\n" +
-	"\voptional_id\"%\n" +
-	"\x0fDownloadRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"g\n" +
+	"\voptional_id\"!\n" +
+	"\x0fDownloadRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\"g\n" +
 	"\x10DownloadResponse\x12*\n" +
 	"\x04info\x18\x01 \x01(\v2\x14.gophkeeper.FileInfoH\x00R\x04info\x12\x1f\n" +
 	"\n" +

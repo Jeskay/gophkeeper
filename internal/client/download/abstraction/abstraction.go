@@ -2,6 +2,12 @@ package abstraction
 
 import "context"
 
+type FileData struct {
+	Id     int64
+	Name   string
+	Size   string
+	Status string
+}
 type Repository interface {
 	SetFiles(value []*FileData)
 	GetFiles() []*FileData
@@ -13,11 +19,10 @@ type DataWriter interface {
 
 type Client interface {
 	GetFiles(ctx context.Context) ([]*FileData, error)
-	StartDownload(ctx context.Context, fileName string) (DownloadStream, error)
+	StartDownload(ctx context.Context, id int64) (DownloadStream, error)
 }
 
 type DownloadStream interface {
 	Init() (string, error)
 	Receive() ([]byte, error)
-	Close() error //TODO: delete since unnecessary when reading stream
 }

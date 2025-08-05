@@ -6,6 +6,7 @@ import (
 	proto "gophkeeper/api/protos"
 	"gophkeeper/internal/client/download/abstraction"
 	menu "gophkeeper/internal/client/menu/control"
+	"gophkeeper/pkg/cipher"
 	"io"
 )
 
@@ -14,14 +15,16 @@ type downloadController struct {
 	client         abstraction.Client
 	repository     abstraction.Repository
 	dataWriter     abstraction.DataWriter
+	downloadCipher cipher.Cipher
 }
 
-func NewController(saveDir string, grpcClient proto.GophkeeperClient, menuController menu.Controller) *downloadController {
+func NewController(saveDir string, grpcClient proto.GophkeeperClient, downloadCipher cipher.Cipher, menuController menu.Controller) *downloadController {
 	return &downloadController{
-		client:         abstraction.NewClient(grpcClient),
+		client:         NewClient(grpcClient),
 		repository:     abstraction.NewRepository(),
 		menuController: menuController,
-		dataWriter:     abstraction.NewDataWriter(saveDir),
+		dataWriter:     NewDataWriter(saveDir),
+		downloadCipher: downloadCipher,
 	}
 }
 
@@ -35,14 +38,13 @@ func (c *downloadController) DownloadFileList() ([]*abstraction.FileData, error)
 	return files, nil
 }
 
-// TODO: make download by file ID
-func (c *downloadController) DownloadFile(fileName string) error {
+func (c *downloadController) DownloadFile(id int64) error {
 	ctx := c.menuController.Authorize(context.Background())
-	stream, err := c.client.StartDownload(ctx, fileName)
+	stream, err := c.client.StartDownload(ctx, id)
 	if err != nil {
 		return err
 	}
-	_, err = stream.Init()
+	fileName, err := stream.Init()
 	if err != nil {
 		return err
 	}
@@ -60,5 +62,13 @@ func (c *downloadController) DownloadFile(fileName string) error {
 			return err
 		}
 	}
-	return c.dataWriter.WriteFile(fileName, data.Bytes())
+	return c.decryptToFile(data.Bytes(), fileName)
+}
+
+func (c *downloadController) decryptToFile(data []byte, out string) (err error) {
+	deciphered, err := c.downloadCipher.Decrypt(data)
+	if err != nil {
+		return
+	}
+	return c.dataWriter.WriteFile(out, deciphered)
 }
