@@ -1,36 +1,30 @@
 package file
 
 import (
-	"gophkeeper/internal/server/dto"
-	fPkg "gophkeeper/pkg/file"
+	"context"
 	"io"
 	"os"
 	"path"
+
+	"gophkeeper/internal/server/dto"
+
+	fPkg "gophkeeper/pkg/file"
 )
 
 type fileService struct {
 	fileWriter fPkg.FileWriter
 	fileReader fPkg.FileReader
-	prefix     string
+	storePath     string
 }
 
 const tmpSuffix = ".tmp"
 
-func NewService(prefix string) *fileService {
-	crntDir, err := os.Getwd()
-	if err == nil {
-		if _, err := os.Stat(prefix); os.IsNotExist(err) {
-			if err = os.Mkdir(prefix, 0755); err != nil {
-				prefix = crntDir
-			}
-		}
-	}
-
-	return &fileService{prefix: prefix, fileWriter: fPkg.NewFileWriter(), fileReader: fPkg.NewFileReader()}
+func NewService(storePath string) *fileService {
+		return &fileService{storePath: storePath, fileWriter: fPkg.NewFileWriter(), fileReader: fPkg.NewFileReader()}
 }
 
 func (s *fileService) SaveFile(name string, data []byte) error {
-	file, err := s.fileWriter.CreateFile(path.Join(s.prefix, name))
+	file, err := s.fileWriter.CreateFile(path.Join(s.storePath, name))
 	if err != nil {
 		return err
 	}
@@ -44,7 +38,7 @@ func (s *fileService) SaveFile(name string, data []byte) error {
 }
 
 func (s *fileService) ReadFile(name string) ([]byte, error) {
-	file, err := s.fileReader.OpenFile(path.Join(s.prefix, name))
+	file, err := s.fileReader.OpenFile(path.Join(s.storePath, name))
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +49,8 @@ func (s *fileService) ReadFile(name string) ([]byte, error) {
 	return data, err
 }
 
-func (s *fileService) WriteByChunk(name string, data <-chan dto.ChunkData) (size int, err error) {
-	filePath := path.Join(s.prefix, name)
+func (s *fileService) WriteByChunk(ctx context.Context, name string, data <-chan dto.ChunkData) (size int, err error) {
+	filePath := path.Join(s.storePath, name)
 	file, err := os.Create(filePath + tmpSuffix)
 	if err != nil {
 		return
@@ -68,24 +62,29 @@ func (s *fileService) WriteByChunk(name string, data <-chan dto.ChunkData) (size
 		}
 	}()
 	writer := s.fileWriter.NewBufferedWriter(file)
+	defer s.fileWriter.BufferedFlush(writer)
 	var n int
-	for chunk := range data {
-		if chunk.Err != nil {
-			err = chunk.Err
+	for {
+		select {
+		case <-ctx.Done():
+			err = context.Canceled
 			return
+		case chunk, ok := <-data:
+			if !ok || chunk.Err != nil {
+				err = chunk.Err
+				return
+			}
+			n, err = s.fileWriter.BufferedWrite(writer, chunk.Data)
+			if err != nil {
+				return
+			}
+			size += n
 		}
-		n, err = s.fileWriter.BufferedWrite(writer, chunk.Data)
-		if err != nil {
-			return
-		}
-		size += n
 	}
-	s.fileWriter.BufferedFlush(writer)
-	return
 }
 
 func (s *fileService) ReadByChunk(name string, data chan<- dto.ChunkData) error {
-	filePath := path.Join(s.prefix, name)
+	filePath := path.Join(s.storePath, name)
 	_, err := os.Stat(filePath)
 	if err != nil {
 		return err

@@ -34,9 +34,9 @@ func (k *KeeperServer) Register(ctx context.Context, r *proto.RegisterRequest) (
 }
 
 func (k *KeeperServer) GetFiles(ctx context.Context, r *proto.GetRequest) (*proto.GetResponse, error) {
-	userId := ctx.Value(dto.Id).(int64)
+	userID := ctx.Value(dto.Id).(int64)
 
-	files, err := k.keeperService.GetFiles(ctx, userId)
+	files, err := k.keeperService.GetFiles(ctx, userID)
 	if err != nil {
 		return &proto.GetResponse{}, err
 	}
@@ -49,7 +49,7 @@ func (k *KeeperServer) GetFiles(ctx context.Context, r *proto.GetRequest) (*prot
 
 func (k *KeeperServer) SaveFile(stream proto.Gophkeeper_SaveFileServer) (err error) {
 	v := stream.Context().Value(dto.Id)
-	userId := v.(int64)
+	userID := v.(int64)
 
 	req, err := stream.Recv()
 	if err != nil {
@@ -72,6 +72,8 @@ func (k *KeeperServer) SaveFile(stream proto.Gophkeeper_SaveFileServer) (err err
 
 	file := dto.File{Name: fName + fType, Status: dto.Processing, Size: int(fSize)}
 	chunkC := make(chan dto.ChunkData)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	go func() {
 		defer close(chunkC)
 		for {
@@ -79,25 +81,25 @@ func (k *KeeperServer) SaveFile(stream proto.Gophkeeper_SaveFileServer) (err err
 				chunkC <- dto.ChunkData{Err: context.Canceled}
 				return
 			}
-			req, err := stream.Recv()
+			req, err = stream.Recv()
 			if err == io.EOF {
-				break
+				return
 			} else if err != nil {
-				chunkC <- dto.ChunkData{Err: err}
-				break
+				cancel()
+				return
 			}
 			chunkC <- dto.ChunkData{Data: req.GetChunkData()}
 		}
 	}()
-	size, err = k.keeperService.UploadFile(context.Background(), userId, file, chunkC)
+	size, err = k.keeperService.UploadFile(ctx, userID, file, chunkC)
 	return
 }
 
 func (k *KeeperServer) DownloadFile(req *proto.DownloadRequest, stream proto.Gophkeeper_DownloadFileServer) error {
 	v := stream.Context().Value(dto.Id)
-	userId := v.(int64)
+	userID := v.(int64)
 	out := make(chan dto.ChunkData)
-	file, err := k.keeperService.DownloadFile(stream.Context(), userId, dto.File{Id: req.Id}, out)
+	file, err := k.keeperService.DownloadFile(stream.Context(), userID, dto.File{Id: req.Id}, out)
 	if err != nil {
 		return err
 	}

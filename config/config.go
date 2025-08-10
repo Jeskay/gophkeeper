@@ -4,8 +4,9 @@ import "fmt"
 
 type ServerConfig struct {
 	GRPCAddress  Address
-	DbConnection Connection
+	DBConnection Connection
 	SecretKey    string `env:"SECRET_KEY"`
+	StorageLocation string `env:"STORAGE_LOCATION"`
 }
 
 type ClientConfig struct {
@@ -26,5 +27,5 @@ type Connection struct {
 }
 
 func (cfg ServerConfig) GetDSN() string {
-	return fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s", cfg.DbConnection.Host, cfg.DbConnection.Port, cfg.DbConnection.User, cfg.DbConnection.Database, cfg.DbConnection.Password)
+	return fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s", cfg.DBConnection.Host, cfg.DBConnection.Port, cfg.DBConnection.User, cfg.DBConnection.Database, cfg.DBConnection.Password)
 }

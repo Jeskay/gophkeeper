@@ -10,6 +10,14 @@ import (
 	"syscall"
 	"time"
 
+	"gophkeeper/config"
+	"gophkeeper/internal/server/auth"
+	"gophkeeper/internal/server/db"
+	"gophkeeper/internal/server/file"
+	"gophkeeper/internal/server/keeper"
+	"gophkeeper/internal/server/transport"
+	"gophkeeper/internal/server/transport/interceptors"
+
 	"github.com/caarlos0/env/v11"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -18,18 +26,9 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	proto "gophkeeper/api/protos"
-	"gophkeeper/config"
-	"gophkeeper/internal/server/auth"
-	"gophkeeper/internal/server/db"
-	"gophkeeper/internal/server/file"
-	"gophkeeper/internal/server/keeper"
-	"gophkeeper/internal/server/transport"
-	"gophkeeper/internal/server/transport/interceptors"
 )
 
-var (
-	cfg config.ServerConfig
-)
+var cfg config.ServerConfig
 
 func main() {
 	grpcAddr := net.JoinHostPort(cfg.GRPCAddress.Host, cfg.GRPCAddress.Port)
@@ -48,7 +47,11 @@ func main() {
 		zapL.Error("failed to initialize db", zap.Error(err))
 		return
 	}
-	fileService := file.NewService("storage")
+	storePath, err := getStoragePath(cfg.StorageLocation)
+	if err != nil {
+		zapL.Error("failed to create storage directory", zap.Error(err))
+	}
+	fileService := file.NewService(storePath)
 
 	authService := auth.NewService(dbService, []byte(cfg.SecretKey), time.Hour*5)
 	keeperService := keeper.NewKeeperService(dbService, fileService)
@@ -90,4 +93,19 @@ func init() {
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func getStoragePath(defaultPath string) (res string, err error) {
+	if defaultPath != "" {
+		_, err = os.Stat(defaultPath)
+		if err == nil {
+			return defaultPath, nil
+		}
+		if os.IsNotExist(err) {
+			err = os.Mkdir(defaultPath, 0o755)
+			return
+		}
+	}
+	res, err = os.Getwd()
+	return
 }
